@@ -1,19 +1,25 @@
-FROM alpine:3.19
-
-RUN apk add --no-cache \
-    postgresql-client \
-    apache2-utils \
-    python3 \
-    py3-pip
+FROM python:3.11-slim
 
 WORKDIR /app
 
-COPY make-data.py .
-COPY generate-votes.sh .
-COPY entrypoint.sh .
+# Install dependencies including Apache Benchmark and psql client
+RUN apt-get update && \
+    apt-get install -y apache2-utils postgresql-client && \
+    rm -rf /var/lib/apt/lists/*
 
-# Generate posta / postb at build time
-RUN python3 make-data.py \
- && chmod +x generate-votes.sh entrypoint.sh
+# Copy everything in seed-data
+COPY . .
 
+# Generate POST data files
+RUN python3 make-data.py
+
+# Make the scripts executable
+RUN chmod +x generate-votes.sh
+RUN chmod +x entrypoint.sh
+# Wait for DB, ensure votes table exists, then generate votes
 ENTRYPOINT ["./entrypoint.sh"]
+
+# uses PGPASSWORD from docker-compose environment
+USER appuser
+
+CMD ["./generate-votes.sh"]

@@ -1,11 +1,14 @@
 __pycache__/
 *.pyc
+*.pyo
+*.log
+*.tmp
 
-.env
-
+# Git & docs
 .git
 .gitignore
-README.md
+*.md
 
-tests/
-
+# Docker metadata
+Dockerfile
+.dockerignore
