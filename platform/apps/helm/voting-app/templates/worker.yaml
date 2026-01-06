@@ -19,9 +19,11 @@ spec:
     spec:
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
+
       containers:
         - name: worker
           image: "{{ .Values.worker.image.repository }}:{{ .Values.worker.image.tag }}"
+
           env:
             - name: REDIS_HOST
               value: {{ .Values.dnsAliases.redisMasterServiceName | quote }}
@@ -33,7 +35,23 @@ spec:
               value: {{ .Values.postgresql.auth.password | quote }}
             - name: POSTGRES_DB
               value: {{ .Values.postgresql.auth.database | quote }}
+
+            # .NET runtime configuration
+            - name: DOTNET_GC_SERVER
+              value: "1"
+            - name: DOTNET_GC_HEAP_HARD_LIMIT
+              value: "800000000"
+
           securityContext:
             {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
+            {{- toYaml .Values.worker.resources | nindent 12 }}
+
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+
+      volumes:
+        - name: tmp
+          emptyDir: {}

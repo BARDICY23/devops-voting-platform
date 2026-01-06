@@ -17,14 +17,6 @@ containerSecurityContext:
     drop:
       - ALL
 
-resources:
-  requests:
-    cpu: 100m
-    memory: 128Mi
-  limits:
-    cpu: 500m
-    memory: 512Mi
-
 monitoring:
   enabled: false
 
@@ -35,7 +27,7 @@ monitoring:
 vote:
   image:
     repository: bardicy/voting-vote
-    tag: "<GIT_SHA>"
+    tag: "72a463656026f116cb46361251670b659642eb9d"
   replicaCount: 2
   service:
     port: 80
@@ -47,7 +39,7 @@ vote:
 result:
   image:
     repository: bardicy/voting-result
-    tag: "<GIT_SHA>"
+    tag: "72a463656026f116cb46361251670b659642eb9d"
   replicaCount: 2
   service:
     port: 80
@@ -59,21 +51,25 @@ result:
 worker:
   image:
     repository: bardicy/voting-worker
-    tag: "<GIT_SHA>"
+    tag: "72a463656026f116cb46361251670b659642eb9d"
   replicaCount: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 512Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
 
 seed:
   enabled: true
   image:
     repository: bardicy/voting-seed-data
-    tag: "<GIT_SHA>"
+    tag: "72a463656026f116cb46361251670b659642eb9d"
 
 # ==================================================
 # Redis (Bitnami)
 # ==================================================
-# Use the Bitnami Redis image with its default entrypoint.
-# This image includes /bin/bash, which is required by the
-# Bitnami Redis Helm chart start scripts.
 
 redis:
   image:
@@ -82,6 +78,11 @@ redis:
   auth:
     enabled: false
   master:
+    persistence:
+      enabled: true
+      size: 1Gi
+  replica:
+    replicaCount: 3
     persistence:
       enabled: true
       size: 1Gi
@@ -109,6 +110,5 @@ postgresql:
 
 dnsAliases:
   enabled: true
-  redisMasterServiceName: redis-master
-  postgresServiceName: postgres-postgresql
-
+  redisMasterServiceName: voting-app-redis-master
+  postgresServiceName: voting-app-redis-master
