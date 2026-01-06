@@ -1,4 +1,7 @@
-# Global defaults
+# ==================================================
+# Global chart configuration
+# ==================================================
+
 imagePullSecrets: []
 nameOverride: ""
 
@@ -11,7 +14,8 @@ containerSecurityContext:
   allowPrivilegeEscalation: false
   readOnlyRootFilesystem: true
   capabilities:
-    drop: ["ALL"]
+    drop:
+      - ALL
 
 resources:
   requests:
@@ -21,52 +25,60 @@ resources:
     cpu: 500m
     memory: 512Mi
 
-# App-level scraping is OPTIONAL.
-# The upstream vote/result services do not expose Prometheus metrics by default.
-# Keep the platform monitoring stack enabled; enable this only if you add /metrics endpoints.
 monitoring:
   enabled: false
 
+# ==================================================
+# Application services
+# ==================================================
+
 vote:
   image:
-    repository: bardicy/voting-app
-    tag: latest
+    repository: bardicy/voting-vote
+    tag: "<GIT_SHA>"
   replicaCount: 2
   service:
     port: 80
     targetPort: 8080
-    metricsPortName: http
   ingress:
     enabled: true
     host: vote.dark-lord.xyz
 
 result:
   image:
-    repository: bardicy/voting-app
-    tag: latest
+    repository: bardicy/voting-result
+    tag: "<GIT_SHA>"
   replicaCount: 2
   service:
     port: 80
     targetPort: 8081
-    metricsPortName: http
   ingress:
     enabled: true
     host: result.dark-lord.xyz
 
 worker:
   image:
-    repository: bardicy/voting-app
-    tag: latest
+    repository: bardicy/voting-worker
+    tag: "<GIT_SHA>"
   replicaCount: 1
 
 seed:
   enabled: true
   image:
-    repository: ghcr.io/YOUR_ORG/seed-data
-    tag: latest
+    repository: bardicy/voting-seed-data
+    tag: "<GIT_SHA>"
 
-# Bitnami Redis
+# ==================================================
+# Redis (Bitnami)
+# ==================================================
+# Use the Bitnami Redis image with its default entrypoint.
+# This image includes /bin/bash, which is required by the
+# Bitnami Redis Helm chart start scripts.
+
 redis:
+  image:
+    repository: bitnami/redis
+    tag: latest
   auth:
     enabled: false
   master:
@@ -74,10 +86,14 @@ redis:
       enabled: true
       size: 1Gi
 
-# Bitnami Postgres
-# NOTE: Upstream result service uses a hard-coded connection string to the "postgres" database.
-# We align the Helm deployment to use database=postgres for cluster deployments.
+# ==================================================
+# PostgreSQL (Bitnami)
+# ==================================================
+
 postgresql:
+  image:
+    repository: bitnami/postgresql
+    tag: latest
   auth:
     username: postgres
     password: postgres
@@ -87,10 +103,12 @@ postgresql:
       enabled: true
       size: 1Gi
 
-# Service DNS aliases to match upstream hard-coded hostnames
-# - vote uses "redis-master"
-# - result uses "postgres-postgresql"
+# ==================================================
+# DNS aliases
+# ==================================================
+
 dnsAliases:
   enabled: true
   redisMasterServiceName: redis-master
   postgresServiceName: postgres-postgresql
+
