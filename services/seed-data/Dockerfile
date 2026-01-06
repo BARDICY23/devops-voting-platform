@@ -1,11 +1,13 @@
-FROM python:3.11-slim
+FROM alpine:3.19
+
+RUN apk add --no-cache \
+    postgresql-client \
+    apache2-utils \
+    curl
 
 WORKDIR /app
-
 COPY . .
 
-RUN useradd -r -u 10001 appuser && chown -R appuser:appuser /app
-USER 10001
+RUN chmod +x entrypoint.sh generate-votes.sh
 
-ENTRYPOINT ["python", "make-data.py"]
-	
+ENTRYPOINT ["./entrypoint.sh"]

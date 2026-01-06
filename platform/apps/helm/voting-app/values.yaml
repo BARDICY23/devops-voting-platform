@@ -111,4 +111,4 @@ postgresql:
 dnsAliases:
   enabled: false
   redisMasterServiceName: voting-app-redis-master
-  postgresServiceName: voting-app-redis-master
+  postgresServiceName: voting-app-postgresql
