@@ -1,0 +1,11 @@
+bin/
+obj/
+
+.env
+
+.git
+.gitignore
+README.md
+
+*.md
+

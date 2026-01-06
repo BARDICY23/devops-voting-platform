@@ -1,0 +1,24 @@
+{{- if .Values.dnsAliases.enabled }}
+# DNS alias services to satisfy upstream hard-coded hostnames without changing app code.
+# - vote uses "redis-master"
+# - result uses "postgres-postgresql"
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.dnsAliases.redisMasterServiceName }}
+  labels:
+    {{- include "voting-app.labels" . | nindent 4 }}
+spec:
+  type: ExternalName
+  externalName: {{ printf "%s-redis-master" .Release.Name | quote }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.dnsAliases.postgresServiceName }}
+  labels:
+    {{- include "voting-app.labels" . | nindent 4 }}
+spec:
+  type: ExternalName
+  externalName: {{ printf "%s-postgresql" .Release.Name | quote }}
+{{- end }}

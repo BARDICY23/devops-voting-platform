@@ -1,0 +1,26 @@
+{{- if .Values.monitoring.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: voting-app-alerts
+  labels:
+    {{- include "voting-app.labels" . | nindent 4 }}
+spec:
+  groups:
+    - name: voting-app.rules
+      rules:
+        - alert: PodCrashLooping
+          expr: increase(kube_pod_container_status_restarts_total{namespace="{{ .Release.Namespace }}"}[5m]) > 3
+          for: 2m
+          labels:
+            severity: warning
+          annotations:
+            summary: Pod restarting frequently in namespace {{ .Release.Namespace }}
+        - alert: VotingAppTargetsDown
+          expr: sum by (namespace) (up{namespace="{{ .Release.Namespace }}"} == 0) > 0
+          for: 2m
+          labels:
+            severity: warning
+          annotations:
+            summary: One or more scrape targets are down in namespace {{ .Release.Namespace }}
+{{- end }}

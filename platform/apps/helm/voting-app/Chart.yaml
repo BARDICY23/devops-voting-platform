@@ -1,0 +1,13 @@
+apiVersion: v2
+name: voting-app
+description: Voting microservices app (vote/result/worker/seed)
+type: application
+version: 0.2.0
+appVersion: "1.0.0"
+dependencies:
+  - name: redis
+    version: 19.6.4
+    repository: https://charts.bitnami.com/bitnami
+  - name: postgresql
+    version: 15.5.20
+    repository: https://charts.bitnami.com/bitnami

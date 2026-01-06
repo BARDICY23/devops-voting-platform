@@ -1,0 +1,6 @@
+vote:
+  ingress:
+    host: vote.dark-lord.xyz
+result:
+  ingress:
+    host: result.dark-lord.xyz

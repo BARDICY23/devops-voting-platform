@@ -1,0 +1,19 @@
+bin/
+obj/
+
+# User/IDE junk
+.vscode/
+.idea/
+
+# Logs & cache
+*.log
+*.tmp
+
+# Git & docs
+.git
+.gitignore
+*.md
+
+# Docker metadata
+Dockerfile
+.dockerignore

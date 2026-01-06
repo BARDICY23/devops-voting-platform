@@ -1,0 +1,96 @@
+# Global defaults
+imagePullSecrets: []
+nameOverride: ""
+
+podSecurityContext:
+  seccompProfile:
+    type: RuntimeDefault
+
+containerSecurityContext:
+  runAsNonRoot: true
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: ["ALL"]
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+# App-level scraping is OPTIONAL.
+# The upstream vote/result services do not expose Prometheus metrics by default.
+# Keep the platform monitoring stack enabled; enable this only if you add /metrics endpoints.
+monitoring:
+  enabled: false
+
+vote:
+  image:
+    repository: bardicy/voting-app
+    tag: latest
+  replicaCount: 2
+  service:
+    port: 80
+    targetPort: 8080
+    metricsPortName: http
+  ingress:
+    enabled: true
+    host: vote.dark-lord.xyz
+
+result:
+  image:
+    repository: bardicy/voting-app
+    tag: latest
+  replicaCount: 2
+  service:
+    port: 80
+    targetPort: 8081
+    metricsPortName: http
+  ingress:
+    enabled: true
+    host: result.dark-lord.xyz
+
+worker:
+  image:
+    repository: bardicy/voting-app
+    tag: latest
+  replicaCount: 1
+
+seed:
+  enabled: true
+  image:
+    repository: ghcr.io/YOUR_ORG/seed-data
+    tag: latest
+
+# Bitnami Redis
+redis:
+  auth:
+    enabled: false
+  master:
+    persistence:
+      enabled: true
+      size: 1Gi
+
+# Bitnami Postgres
+# NOTE: Upstream result service uses a hard-coded connection string to the "postgres" database.
+# We align the Helm deployment to use database=postgres for cluster deployments.
+postgresql:
+  auth:
+    username: postgres
+    password: postgres
+    database: postgres
+  primary:
+    persistence:
+      enabled: true
+      size: 1Gi
+
+# Service DNS aliases to match upstream hard-coded hostnames
+# - vote uses "redis-master"
+# - result uses "postgres-postgresql"
+dnsAliases:
+  enabled: true
+  redisMasterServiceName: redis-master
+  postgresServiceName: postgres-postgresql
