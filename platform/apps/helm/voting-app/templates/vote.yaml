@@ -28,7 +28,7 @@ spec:
           env:
             # Upstream vote uses hard-coded "redis-master" but we also set it for clarity
             - name: REDIS_HOST
-              value: {{ .Values.dnsAliases.redisMasterServiceName | quote }}
+              value: voting-app-redis-master
           securityContext:
             {{- toYaml .Values.containerSecurityContext | nindent 12 }}
           resources:

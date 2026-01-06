@@ -109,6 +109,6 @@ postgresql:
 # ==================================================
 
 dnsAliases:
-  enabled: true
+  enabled: false
   redisMasterServiceName: voting-app-redis-master
   postgresServiceName: voting-app-redis-master

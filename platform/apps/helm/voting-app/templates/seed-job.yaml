@@ -22,7 +22,7 @@ spec:
           image: "{{ .Values.seed.image.repository }}:{{ .Values.seed.image.tag }}"
           env:
             - name: POSTGRES_HOST
-              value: {{ .Values.dnsAliases.postgresServiceName | quote }}
+              value: voting-app-postgresql
             - name: POSTGRES_USER
               value: {{ .Values.postgresql.auth.username | quote }}
             - name: POSTGRES_PASSWORD

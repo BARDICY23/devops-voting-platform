@@ -29,6 +29,9 @@ spec:
             # Upstream result uses PORT (defaults to 4000); we force it to match service targetPort.
             - name: PORT
               value: {{ .Values.result.service.targetPort | quote }}
+            - name: REDIS_HOST
+              value: voting-app-redis-master
+
           securityContext:
             {{- toYaml .Values.containerSecurityContext | nindent 12 }}
           resources:

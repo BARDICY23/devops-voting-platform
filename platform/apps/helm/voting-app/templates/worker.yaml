@@ -26,9 +26,9 @@ spec:
 
           env:
             - name: REDIS_HOST
-              value: {{ .Values.dnsAliases.redisMasterServiceName | quote }}
+              value: voting-app-redis-master
             - name: POSTGRES_HOST
-              value: {{ .Values.dnsAliases.postgresServiceName | quote }}
+              value: voting-app-postgresql
             - name: POSTGRES_USER
               value: {{ .Values.postgresql.auth.username | quote }}
             - name: POSTGRES_PASSWORD
