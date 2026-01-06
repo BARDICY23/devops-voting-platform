@@ -9,7 +9,7 @@ COPY . .
 
 # Create non-root user (python slim does NOT provide one)
 RUN useradd -r -u 10001 appuser && chown -R appuser:appuser /app
-USER appuser
+USER 10001
 
 EXPOSE 8080
 CMD ["python", "app.py"]
