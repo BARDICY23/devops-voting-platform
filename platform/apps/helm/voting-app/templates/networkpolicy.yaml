@@ -1,37 +1,27 @@
+# =========================================================
+# 1. Default deny everything (zero trust baseline)
+# =========================================================
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: default-deny-all
 spec:
   podSelector: {}
-  policyTypes: ["Ingress", "Egress"]
+  policyTypes:
+    - Ingress
+    - Egress
 ---
-# Allow ingress-ALB to reach frontends
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: allow-ingress-to-frontends
-spec:
-  podSelector:
-    matchExpressions:
-      - key: app.kubernetes.io/component
-        operator: In
-        values: ["vote","result"]
-  ingress:
-    - from:
-        - ipBlock:
-            cidr: 10.20.0.0/16
-              
-  policyTypes: ["Ingress"]
----
-# Allow DNS queries to CoreDNS (kube-dns) in kube-system
+# =========================================================
+# 2. Allow DNS egress to CoreDNS
+# =========================================================
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-dns-egress
 spec:
   podSelector: {}
-  policyTypes: ["Egress"]
+  policyTypes:
+    - Egress
   egress:
     - to:
         - namespaceSelector:
@@ -46,7 +36,55 @@ spec:
         - protocol: TCP
           port: 53
 ---
-# Allow app egress to redis and postgres services (Bitnami chart pods)
+# =========================================================
+# 3. Allow ingress from external load balancer to frontends
+#    (vote + result only)
+# =========================================================
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-to-frontends
+spec:
+  podSelector:
+    matchExpressions:
+      - key: app.kubernetes.io/component
+        operator: In
+        values:
+          - vote
+          - result
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - ipBlock:
+            cidr: 10.20.0.0/16
+---
+# =========================================================
+# 4. Allow seed job → vote service (HTTP only)
+#    (THIS WAS THE MISSING PIECE)
+# =========================================================
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-seed-to-vote
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: vote
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/component: seed
+      ports:
+        - protocol: TCP
+          port: 80
+---
+# =========================================================
+# 5. Allow app pods → Redis + PostgreSQL (egress)
+# =========================================================
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -56,7 +94,13 @@ spec:
     matchExpressions:
       - key: app.kubernetes.io/component
         operator: In
-        values: ["vote","result","worker","seed"]
+        values:
+          - vote
+          - result
+          - worker
+          - seed
+  policyTypes:
+    - Egress
   egress:
     - to:
         - podSelector:
@@ -72,9 +116,10 @@ spec:
       ports:
         - protocol: TCP
           port: 5432
-  policyTypes: ["Egress"]
 ---
-# Allow DB/Redis ingress from app pods
+# =========================================================
+# 6. Allow Redis/Postgres ingress ONLY from app pods
+# =========================================================
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -84,17 +129,25 @@ spec:
     matchExpressions:
       - key: app.kubernetes.io/name
         operator: In
-        values: ["redis","postgresql"]
+        values:
+          - redis
+          - postgresql
+  policyTypes:
+    - Ingress
   ingress:
     - from:
         - podSelector:
             matchExpressions:
               - key: app.kubernetes.io/component
                 operator: In
-                values: ["vote","result","worker","seed"]
+                values:
+                  - vote
+                  - result
+                  - worker
+                  - seed
       ports:
         - protocol: TCP
           port: 6379
         - protocol: TCP
           port: 5432
-  policyTypes: ["Ingress"]
+
