@@ -60,8 +60,7 @@ spec:
             cidr: 10.20.0.0/16
 ---
 # =========================================================
-# 4. Allow seed job → vote service (HTTP only)
-#    (THIS WAS THE MISSING PIECE)
+# 4. Allow seed job → vote pod (INGRESS)
 # =========================================================
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -80,10 +79,32 @@ spec:
               app.kubernetes.io/component: seed
       ports:
         - protocol: TCP
-          port: 80
+          port: 8080
 ---
 # =========================================================
-# 5. Allow app pods → Redis + PostgreSQL (egress)
+# 5. Allow seed job → vote pod (EGRESS)
+# =========================================================
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-seed-egress-to-vote
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: seed
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/component: vote
+      ports:
+        - protocol: TCP
+          port: 8080
+---
+# =========================================================
+# 6. Allow app pods → Redis + PostgreSQL (egress)
 # =========================================================
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -118,7 +139,7 @@ spec:
           port: 5432
 ---
 # =========================================================
-# 6. Allow Redis/Postgres ingress ONLY from app pods
+# 7. Allow Redis/Postgres ingress ONLY from app pods
 # =========================================================
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy

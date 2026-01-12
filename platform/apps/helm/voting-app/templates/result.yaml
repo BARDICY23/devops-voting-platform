@@ -19,6 +19,18 @@ spec:
     spec:
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- if .Values.topologySpread.enabled }}
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              {{- include "voting-app.selectorLabels" . | nindent 14 }}
+              app.kubernetes.io/component: result
+      {{- end }}
+
+
       containers:
         - name: result
           image: "{{ .Values.result.image.repository }}:{{ .Values.result.image.tag }}"

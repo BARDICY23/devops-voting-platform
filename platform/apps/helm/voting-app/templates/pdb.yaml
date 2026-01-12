@@ -1,0 +1,29 @@
+{{- if .Values.pdb.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: vote-pdb
+  labels:
+    {{- include "voting-app.labels" . | nindent 4 }}
+    app.kubernetes.io/component: vote
+spec:
+  minAvailable: {{ .Values.pdb.minAvailable }}
+  selector:
+    matchLabels:
+      {{- include "voting-app.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: vote
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: result-pdb
+  labels:
+    {{- include "voting-app.labels" . | nindent 4 }}
+    app.kubernetes.io/component: result
+spec:
+  minAvailable: {{ .Values.pdb.minAvailable }}
+  selector:
+    matchLabels:
+      {{- include "voting-app.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: result
+{{- end }}

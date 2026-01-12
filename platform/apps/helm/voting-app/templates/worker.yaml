@@ -26,9 +26,9 @@ spec:
 
           env:
             - name: REDIS_HOST
-              value: voting-app-redis-master
+              value: {{ .Values.dnsAliases.redisMasterServiceName | quote }}
             - name: POSTGRES_HOST
-              value: voting-app-postgresql
+              value: {{ .Values.dnsAliases.postgresServiceName | quote }}
             - name: POSTGRES_USER
               value: {{ .Values.postgresql.auth.username | quote }}
             - name: POSTGRES_PASSWORD
@@ -47,6 +47,20 @@ spec:
 
           resources:
             {{- toYaml .Values.worker.resources | nindent 12 }}
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", "dotnet --info >/dev/null 2>&1"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          livenessProbe:
+            exec:
+              command: ["sh", "-c", "dotnet --info >/dev/null 2>&1"]
+            initialDelaySeconds: 20
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
 
           volumeMounts:
             - name: tmp

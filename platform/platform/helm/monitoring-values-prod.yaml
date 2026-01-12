@@ -1,0 +1,31 @@
+grafana:
+  enabled: true
+  persistence:
+    enabled: true
+    size: 5Gi
+
+alertmanager:
+  enabled: true
+
+prometheus:
+  prometheusSpec:
+    retention: 7d
+    retentionSize: 20GB
+    scrapeInterval: 30s
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    resources:
+      requests:
+        cpu: 500m
+        memory: 2Gi
+      limits:
+        cpu: 1
+        memory: 4Gi
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 20Gi

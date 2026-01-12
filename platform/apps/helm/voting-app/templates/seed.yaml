@@ -8,6 +8,8 @@ metadata:
     app.kubernetes.io/component: seed
 spec:
   backoffLimit: 3
+  ttlSecondsAfterFinished: {{ .Values.seed.ttlSecondsAfterFinished }}
+  activeDeadlineSeconds: {{ .Values.seed.activeDeadlineSeconds }}
   template:
     metadata:
       labels:
@@ -15,12 +17,18 @@ spec:
         app.kubernetes.io/component: seed
     spec:
       restartPolicy: OnFailure
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
         - name: seed
           image: "{{ .Values.seed.image.repository }}:{{ .Values.seed.image.tag }}"
           env:
+            - name: VOTE_URL
+              value: {{ .Values.seed.voteUrl | quote }}
             - name: POSTGRES_HOST
-              value: voting-app-postgresql
+              value: {{ .Values.dnsAliases.postgresServiceName | quote }}
+            - name: POSTGRES_PORT
+              value: "5432"
             - name: POSTGRES_USER
               value: {{ .Values.postgresql.auth.username | quote }}
             - name: POSTGRES_PASSWORD
@@ -28,7 +36,10 @@ spec:
             - name: POSTGRES_DB
               value: {{ .Values.postgresql.auth.database | quote }}
           securityContext:
-            runAsUser: 0
-            runAsGroup: 0
+            runAsNonRoot: true
             allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop:
+                - ALL
 {{- end }}

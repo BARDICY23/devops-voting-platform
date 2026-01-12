@@ -19,6 +19,8 @@ containerSecurityContext:
 
 monitoring:
   enabled: false
+  serviceMonitor:
+    enabled: false
 
 # ==================================================
 # Application services
@@ -66,6 +68,10 @@ seed:
   image:
     repository: bardicy/voting-seed-data
     tag: "72a463656026f116cb46361251670b659642eb9d"
+  voteUrl: "http://vote/"
+  ttlSecondsAfterFinished: 300
+  activeDeadlineSeconds: 600
+
 
 # ==================================================
 # Redis (Bitnami)
@@ -103,6 +109,28 @@ postgresql:
     persistence:
       enabled: true
       size: 1Gi
+
+# ==================================================
+# Availability & scaling
+# ==================================================
+
+pdb:
+  enabled: true
+  minAvailable: 1
+
+hpa:
+  enabled: true
+  vote:
+    minReplicas: 1
+    maxReplicas: 3
+    targetCPUUtilizationPercentage: 80
+  result:
+    minReplicas: 1
+    maxReplicas: 3
+    targetCPUUtilizationPercentage: 80
+
+topologySpread:
+  enabled: true
 
 # ==================================================
 # DNS aliases

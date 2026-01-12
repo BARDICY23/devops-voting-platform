@@ -1,1 +1,13 @@
-# Optional Argo CD helm values placeholder
+server:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+configs:
+  params:
+    server.insecure: true

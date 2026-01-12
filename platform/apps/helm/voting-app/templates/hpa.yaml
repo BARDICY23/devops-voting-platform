@@ -1,0 +1,45 @@
+{{- if .Values.hpa.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: vote-hpa
+  labels:
+    {{- include "voting-app.labels" . | nindent 4 }}
+    app.kubernetes.io/component: vote
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: vote
+  minReplicas: {{ .Values.hpa.vote.minReplicas }}
+  maxReplicas: {{ .Values.hpa.vote.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.hpa.vote.targetCPUUtilizationPercentage }}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: result-hpa
+  labels:
+    {{- include "voting-app.labels" . | nindent 4 }}
+    app.kubernetes.io/component: result
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: result
+  minReplicas: {{ .Values.hpa.result.minReplicas }}
+  maxReplicas: {{ .Values.hpa.result.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.hpa.result.targetCPUUtilizationPercentage }}
+{{- end }}
