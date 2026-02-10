@@ -17,8 +17,13 @@ spec:
         {{- include "voting-app.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: result
     spec:
+      automountServiceAccountToken: false
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       {{- if .Values.topologySpread.enabled }}
       topologySpreadConstraints:
         - maxSkew: 1
@@ -30,10 +35,10 @@ spec:
               app.kubernetes.io/component: result
       {{- end }}
 
-
       containers:
         - name: result
           image: "{{ .Values.result.image.repository }}:{{ .Values.result.image.tag }}"
+          imagePullPolicy: IfNotPresent
           ports:
             - name: http
               containerPort: {{ .Values.result.service.targetPort }}
@@ -41,13 +46,25 @@ spec:
             # Upstream result uses PORT (defaults to 4000); we force it to match service targetPort.
             - name: PORT
               value: {{ .Values.result.service.targetPort | quote }}
-            - name: REDIS_HOST
-              value: voting-app-redis-master
+
+            - name: POSTGRES_HOST
+              value: {{ include "voting-app.postgresqlServiceName" . | quote }}
+            - name: POSTGRES_USER
+              value: {{ .Values.postgresql.auth.username | quote }}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "voting-app.postgresqlSecretName" . | quote }}
+                  key: {{ include "voting-app.postgresqlUserPasswordKey" . | quote }}
+            - name: POSTGRES_DB
+              value: {{ .Values.postgresql.auth.database | quote }}
 
           securityContext:
             {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          {{- with .Values.result.resources }}
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           readinessProbe:
             httpGet:
               path: /

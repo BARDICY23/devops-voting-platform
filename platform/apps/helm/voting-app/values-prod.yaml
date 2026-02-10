@@ -1,0 +1,23 @@
+# Production-ish overrides (example)
+
+secrets:
+  create: false
+
+# Stronger HA posture in prod
+pdb:
+  enabled: true
+  minAvailable: 1
+
+hpa:
+  enabled: true
+  vote:
+    minReplicas: 2
+    maxReplicas: 6
+    targetCPUUtilizationPercentage: 70
+  result:
+    minReplicas: 2
+    maxReplicas: 6
+    targetCPUUtilizationPercentage: 70
+
+topologySpread:
+  enabled: true

@@ -17,55 +17,35 @@ spec:
         {{- include "voting-app.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: worker
     spec:
+      automountServiceAccountToken: false
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
-
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: worker
           image: "{{ .Values.worker.image.repository }}:{{ .Values.worker.image.tag }}"
-
+          imagePullPolicy: IfNotPresent
           env:
             - name: REDIS_HOST
-              value: {{ .Values.dnsAliases.redisMasterServiceName | quote }}
+              value: {{ include "voting-app.redisMasterServiceName" . | quote }}
             - name: POSTGRES_HOST
-              value: {{ .Values.dnsAliases.postgresServiceName | quote }}
+              value: {{ include "voting-app.postgresqlServiceName" . | quote }}
             - name: POSTGRES_USER
               value: {{ .Values.postgresql.auth.username | quote }}
             - name: POSTGRES_PASSWORD
-              value: {{ .Values.postgresql.auth.password | quote }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "voting-app.postgresqlSecretName" . | quote }}
+                  key: {{ include "voting-app.postgresqlUserPasswordKey" . | quote }}
             - name: POSTGRES_DB
               value: {{ .Values.postgresql.auth.database | quote }}
 
-            # .NET runtime configuration
-            - name: DOTNET_GC_SERVER
-              value: "1"
-            - name: DOTNET_GC_HEAP_HARD_LIMIT
-              value: "800000000"
-
           securityContext:
             {{- toYaml .Values.containerSecurityContext | nindent 12 }}
-
+          {{- with .Values.worker.resources }}
           resources:
-            {{- toYaml .Values.worker.resources | nindent 12 }}
-          readinessProbe:
-            exec:
-              command: ["sh", "-c", "dotnet --info >/dev/null 2>&1"]
-            initialDelaySeconds: 5
-            periodSeconds: 10
-            timeoutSeconds: 5
-            failureThreshold: 6
-          livenessProbe:
-            exec:
-              command: ["sh", "-c", "dotnet --info >/dev/null 2>&1"]
-            initialDelaySeconds: 20
-            periodSeconds: 20
-            timeoutSeconds: 5
-            failureThreshold: 3
-
-          volumeMounts:
-            - name: tmp
-              mountPath: /tmp
-
-      volumes:
-        - name: tmp
-          emptyDir: {}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}

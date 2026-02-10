@@ -23,6 +23,17 @@ module "vpc" {
   public_subnets  = local.public_subnets
   private_subnets = local.private_subnets
 
+  # Required for AWS Load Balancer Controller (ALB/NLB) subnet discovery
+  public_subnet_tags = {
+    "kubernetes.io/cluster/${var.name}" = "shared"
+    "kubernetes.io/role/elb"           = 1
+  }
+
+  private_subnet_tags = {
+    "kubernetes.io/cluster/${var.name}" = "shared"
+    "kubernetes.io/role/internal-elb"   = 1
+  }
+
   enable_nat_gateway = true
   single_nat_gateway = true
 

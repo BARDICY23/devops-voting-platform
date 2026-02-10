@@ -1,14 +1,16 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: tqp-root
+  name: platform-base
   namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
 spec:
   project: default
   source:
-    repoURL: https://github.com/YOUR_ORG/YOUR_REPO
-    targetRevision: main
-    path: platform/argocd/apps
+    repoURL: https://github.com/BARDICY23/devops-voting-platform.git
+    targetRevision: services
+    path: platform/platform/base
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd

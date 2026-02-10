@@ -1,54 +1,36 @@
-# Kubernetes Voting Application (Helm + Zero-Trust NetworkPolicy)
+# Voting App — Cloud-first DevOps/GitOps Repo
 
-This repo contains a microservices voting app with:
-- Local development via Docker Compose
-- Kubernetes deployment via Helm (with Redis + PostgreSQL subcharts)
-- Security posture aligned with PSA (non-root) and NetworkPolicies (zero-trust default deny)
-- Optional (disabled-by-default) availability/scaling features: PDB/HPA/topology spread
+This repo contains a microservices voting app that’s been upgraded with a **production-grade platform layer**:
+
+- Docker images for each service (`services/*`)
+- Local run via Docker Compose (`platform/compose.yaml`)
+- Kubernetes deployment via Helm (`platform/apps/helm/voting-app`)
+- GitOps delivery via Argo CD App-of-Apps (`platform/platform/argocd`)
+- Observability add-ons (Prometheus/Grafana) + curated dashboards/alerts (`platform/platform/observability`)
 
 ## Repo layout
 
-- `services/` — application services + Dockerfiles
-- `platform/compose.yaml` — local orchestration
-- `platform/apps/helm/voting-app/` — Helm chart
-- `platform/infra/terraform/` — cluster/IaC (dev env example)
-- `platform/platform/` — cluster add-ons (ingress, monitoring, external-secrets, argo)
+- `services/` — application code + Dockerfiles (vote/result/worker/seed-data)
+- `.github/workflows/services-ci.yaml` — builds + pushes images to Docker Hub
+- `platform/compose.yaml` — local dev orchestration (fast iteration)
+- `platform/apps/helm/voting-app/` — Helm chart (includes Redis + PostgreSQL deps)
+- `platform/platform/` — GitOps platform layer (Argo apps + observability resources)
+- `platform/infra/terraform/` — Terraform for EKS/VPC (dev env example)
 
-## Local (Docker Compose)
+## GitOps bootstrap
 
-Run the app:
+1) Install Argo CD in the `argocd` namespace (Helm recommended).
+
+2) Apply the root App of Apps:
+
 ```bash
-docker compose -f platform/compose.yaml up --build
+kubectl apply -f platform/platform/argocd/bootstrap/app-of-apps.yaml
 ```
 
-(Optional) seed data profile:
-```bash
-docker compose -f platform/compose.yaml --profile seed up --build
-```
+After that, Argo CD manages everything under `platform/platform/argocd/apps/`.
 
-Vote UI: http://localhost:8080  
-Results UI: http://localhost:8081
+## Security posture (what’s already here)
 
-## Kubernetes (Helm)
-
-Build/push images, then install (example):
-```bash
-helm upgrade --install voting-app platform/apps/helm/voting-app \
-  --namespace voting --create-namespace \
-  --set vote.image.tag=<TAG> \
-  --set result.image.tag=<TAG> \
-  --set worker.image.tag=<TAG> \
-  --set seed.image.tag=<TAG>
-```
-
-Port-forward:
-```bash
-kubectl -n voting port-forward svc/vote 8080:80
-kubectl -n voting port-forward svc/result 8081:80
-```
-
-## Notes
-
-- ServiceMonitor is kept as reference but disabled by default (no `/metrics` endpoints yet).
-- Seed job is env-driven and PSA-safe; job cleanup/timeouts are configurable in `values.yaml`.
-- PDB/HPA/topology spread are present but disabled by default.
+- PSA-ready: app pods run non-root + RuntimeDefault seccomp
+- Default-deny NetworkPolicies + explicit allow rules
+- DB passwords consumed from Kubernetes Secret (cloud-first contract)

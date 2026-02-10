@@ -1,6 +1,17 @@
+# Dev/local overrides
+
 vote:
   ingress:
     host: vote.dark-lord.xyz
+
 result:
   ingress:
     host: result.dark-lord.xyz
+
+# Local/dev only: create a plaintext Secret so the Bitnami PostgreSQL chart + apps can start.
+# In cloud, set `secrets.create=false` and provision via External Secrets Operator.
+secrets:
+  create: true
+  postgresql:
+    postgresPassword: postgres
+    userPassword: postgres

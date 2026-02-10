@@ -1,0 +1,14 @@
+{{- if .Values.grafanaDashboards.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: voting-app-grafana-dashboards
+  namespace: {{ .Values.namespace | default "monitoring" }}
+  labels:
+    {{ .Values.grafanaDashboards.label | default "grafana_dashboard" }}: "1"
+data:
+  cluster-overview.json: |-
+{{ (.Files.Get "dashboards/cluster-overview.json") | indent 4 }}
+  ingress-overview.json: |-
+{{ (.Files.Get "dashboards/ingress-overview.json") | indent 4 }}
+{{- end }}

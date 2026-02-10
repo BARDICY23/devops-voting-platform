@@ -17,6 +17,11 @@ containerSecurityContext:
     drop:
       - ALL
 
+# ==================================================
+# Monitoring integration (optional)
+# ==================================================
+# NOTE: This app does not expose Prometheus metrics by default.
+# Keep ServiceMonitor + app-specific rules disabled unless you add /metrics.
 monitoring:
   enabled: false
   serviceMonitor:
@@ -29,31 +34,61 @@ monitoring:
 vote:
   image:
     repository: bardicy/voting-vote
-    tag: "72a463656026f116cb46361251670b659642eb9d"
+    # CI pushes both :<git-sha> and :latest; Argo Image Updater can write back the git-sha.
+    tag: "latest"
   replicaCount: 2
   service:
     port: 80
     targetPort: 8080
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 250m
+      memory: 256Mi
   ingress:
     enabled: true
     host: vote.dark-lord.xyz
+    className: alb
+    annotations:
+      alb.ingress.kubernetes.io/scheme: internet-facing
+      alb.ingress.kubernetes.io/target-type: ip
+      alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
+      # Put both ingresses in the same ALB (one ALB, two host rules).
+      alb.ingress.kubernetes.io/group.name: voting-app
+      alb.ingress.kubernetes.io/group.order: "10"
 
 result:
   image:
     repository: bardicy/voting-result
-    tag: "72a463656026f116cb46361251670b659642eb9d"
+    tag: "latest"
   replicaCount: 2
   service:
     port: 80
     targetPort: 8081
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 250m
+      memory: 256Mi
   ingress:
     enabled: true
     host: result.dark-lord.xyz
+    className: alb
+    annotations:
+      alb.ingress.kubernetes.io/scheme: internet-facing
+      alb.ingress.kubernetes.io/target-type: ip
+      alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
+      alb.ingress.kubernetes.io/group.name: voting-app
+      alb.ingress.kubernetes.io/group.order: "20"
 
 worker:
   image:
     repository: bardicy/voting-worker
-    tag: "72a463656026f116cb46361251670b659642eb9d"
+    tag: "latest"
   replicaCount: 1
   resources:
     requests:
@@ -67,21 +102,32 @@ seed:
   enabled: true
   image:
     repository: bardicy/voting-seed-data
-    tag: "72a463656026f116cb46361251670b659642eb9d"
+    tag: "latest"
   voteUrl: "http://vote/"
   ttlSecondsAfterFinished: 300
   activeDeadlineSeconds: 600
 
+# ==================================================
+# Secrets contract (cloud-first)
+# ==================================================
+# In production, keep `secrets.create=false` and create the secret via External Secrets
+# (AWS Secrets Manager → External Secrets Operator → Kubernetes Secret).
+# For local/dev, override in values-dev.yaml with `secrets.create=true`.
+secrets:
+  create: false
+  postgresql:
+    secretName: voting-app-postgresql
+    # Only used when secrets.create=true (dev/local). Do NOT commit real prod creds.
+    postgresPassword: ""
+    userPassword: ""
 
 # ==================================================
 # Redis (Bitnami)
 # ==================================================
-
 redis:
-  image:
-    repository: bitnami/redis
-    tag: latest
   auth:
+    # NOTE: The upstream app does not use Redis auth out of the box.
+    # If you want to enable it, we can add REDIS_PASSWORD support across vote/worker and lock it down.
     enabled: false
   master:
     persistence:
@@ -96,30 +142,31 @@ redis:
 # ==================================================
 # PostgreSQL (Bitnami)
 # ==================================================
-
 postgresql:
-  image:
-    repository: bitnami/postgresql
-    tag: latest
   auth:
-    username: postgres
-    password: postgres
-    database: postgres
+    username: voting
+    database: votes
+
+    # Cloud-first: the DB passwords MUST come from a Secret (created by ESO in AWS).
+    existingSecret: voting-app-postgresql
+    secretKeys:
+      adminPasswordKey: postgres-password
+      userPasswordKey: password
   primary:
     persistence:
       enabled: true
       size: 1Gi
 
 # ==================================================
-# Availability & scaling
+# Availability & scaling (disabled by default)
 # ==================================================
 
 pdb:
-  enabled: true
+  enabled: false
   minAvailable: 1
 
 hpa:
-  enabled: true
+  enabled: false
   vote:
     minReplicas: 1
     maxReplicas: 3
@@ -130,13 +177,4 @@ hpa:
     targetCPUUtilizationPercentage: 80
 
 topologySpread:
-  enabled: true
-
-# ==================================================
-# DNS aliases
-# ==================================================
-
-dnsAliases:
   enabled: false
-  redisMasterServiceName: voting-app-redis-master
-  postgresServiceName: voting-app-postgresql

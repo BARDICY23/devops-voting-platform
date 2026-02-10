@@ -37,8 +37,10 @@ spec:
           port: 53
 ---
 # =========================================================
-# 3. Allow ingress from external load balancer to frontends
-#    (vote + result only)
+# 3. Allow ingress to frontends (vote + result)
+#    NOTE:
+#      - In EKS with ALB (target-type=ip) the LB targets pod IPs/ports (targetPort).
+#      - We avoid hard-coding any VPC CIDR to keep this reusable across environments.
 # =========================================================
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -57,7 +59,12 @@ spec:
   ingress:
     - from:
         - ipBlock:
-            cidr: 10.20.0.0/16
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 8080
+        - protocol: TCP
+          port: 8081
 ---
 # =========================================================
 # 4. Allow seed job → vote pod (INGRESS)
@@ -139,20 +146,16 @@ spec:
           port: 5432
 ---
 # =========================================================
-# 7. Allow Redis/Postgres ingress ONLY from app pods
+# 7. Allow PostgreSQL ingress from app pods (only)
 # =========================================================
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-db-redis-ingress-from-app
+  name: allow-postgresql-ingress-from-app
 spec:
   podSelector:
-    matchExpressions:
-      - key: app.kubernetes.io/name
-        operator: In
-        values:
-          - redis
-          - postgresql
+    matchLabels:
+      app.kubernetes.io/name: postgresql
   policyTypes:
     - Ingress
   ingress:
@@ -168,7 +171,58 @@ spec:
                   - seed
       ports:
         - protocol: TCP
-          port: 6379
-        - protocol: TCP
           port: 5432
-
+---
+# =========================================================
+# 8. Allow Redis ingress from app pods AND other Redis pods
+#    (required for replication: replicas → master on 6379)
+# =========================================================
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-redis-ingress-from-app-and-redis
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: redis
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/component
+                operator: In
+                values:
+                  - vote
+                  - result
+                  - worker
+                  - seed
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: redis
+      ports:
+        - protocol: TCP
+          port: 6379
+---
+# =========================================================
+# 9. Allow Redis egress to Redis (replicas → master)
+# =========================================================
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-redis-egress-to-redis
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: redis
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: redis
+      ports:
+        - protocol: TCP
+          port: 6379

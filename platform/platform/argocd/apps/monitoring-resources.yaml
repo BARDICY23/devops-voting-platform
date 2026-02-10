@@ -1,0 +1,25 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: monitoring-resources
+  namespace: argocd
+  annotations:
+    # Deploy after the monitoring stack (kube-prometheus-stack)
+    argocd.argoproj.io/sync-wave: "20"
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/BARDICY23/devops-voting-platform.git
+    targetRevision: services
+    path: platform/platform/observability/helm/monitoring-resources
+    helm:
+      releaseName: monitoring-resources
+      valueFiles:
+        - values.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

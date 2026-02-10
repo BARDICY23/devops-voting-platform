@@ -3,7 +3,14 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: vote
+  {{- with .Values.vote.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
+  {{- if .Values.vote.ingress.className }}
+  ingressClassName: {{ .Values.vote.ingress.className }}
+  {{- end }}
   rules:
     - host: {{ .Values.vote.ingress.host }}
       http:
@@ -16,13 +23,21 @@ spec:
                 port:
                   number: 80
 {{- end }}
+
 ---
 {{- if .Values.result.ingress.enabled }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: result
+  {{- with .Values.result.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
+  {{- if .Values.result.ingress.className }}
+  ingressClassName: {{ .Values.result.ingress.className }}
+  {{- end }}
   rules:
     - host: {{ .Values.result.ingress.host }}
       http:

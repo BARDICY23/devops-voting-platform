@@ -3,13 +3,55 @@ kind: Application
 metadata:
   name: voting-app-dev
   namespace: argocd
+  annotations:
+    # Ensure platform base + add-ons exist first
+    argocd.argoproj.io/sync-wave: "30"
+
+    # Argo CD Image Updater (optional but recommended for dev)
+    #
+    # CI builds/pushes:
+    #   bardicy/voting-<service>:<git-sha>
+    # Image Updater watches the registry and writes back the new tag into Git.
+    argocd-image-updater.argoproj.io/image-list: |
+      vote=docker.io/bardicy/voting-vote
+      result=docker.io/bardicy/voting-result
+      worker=docker.io/bardicy/voting-worker
+      seed=docker.io/bardicy/voting-seed-data
+
+    # Track only git-sha tags (GitHub Actions uses the full 40-char sha)
+    argocd-image-updater.argoproj.io/vote.allow-tags: regexp:^[0-9a-f]{40}$
+    argocd-image-updater.argoproj.io/result.allow-tags: regexp:^[0-9a-f]{40}$
+    argocd-image-updater.argoproj.io/worker.allow-tags: regexp:^[0-9a-f]{40}$
+    argocd-image-updater.argoproj.io/seed.allow-tags: regexp:^[0-9a-f]{40}$
+
+    # Use registry build timestamps to pick the newest pushed tag
+    argocd-image-updater.argoproj.io/vote.update-strategy: newest-build
+    argocd-image-updater.argoproj.io/result.update-strategy: newest-build
+    argocd-image-updater.argoproj.io/worker.update-strategy: newest-build
+    argocd-image-updater.argoproj.io/seed.update-strategy: newest-build
+
+    # Map images → Helm values keys
+    argocd-image-updater.argoproj.io/vote.helm.image-name: vote.image.repository
+    argocd-image-updater.argoproj.io/vote.helm.image-tag: vote.image.tag
+    argocd-image-updater.argoproj.io/result.helm.image-name: result.image.repository
+    argocd-image-updater.argoproj.io/result.helm.image-tag: result.image.tag
+    argocd-image-updater.argoproj.io/worker.helm.image-name: worker.image.repository
+    argocd-image-updater.argoproj.io/worker.helm.image-tag: worker.image.tag
+    argocd-image-updater.argoproj.io/seed.helm.image-name: seed.image.repository
+    argocd-image-updater.argoproj.io/seed.helm.image-tag: seed.image.tag
+
+    # Git write-back (requires repo credentials configured in ArgoCD / Image Updater)
+    argocd-image-updater.argoproj.io/write-back-method: git
+    argocd-image-updater.argoproj.io/git-branch: services
+
 spec:
   project: default
   source:
-    repoURL: https://github.com/YOUR_ORG/YOUR_REPO
-    targetRevision: main
-    path: apps/helm/voting-app
+    repoURL: https://github.com/BARDICY23/devops-voting-platform.git
+    targetRevision: platform
+    path: platform/apps/helm/voting-app
     helm:
+      releaseName: voting-app
       valueFiles:
         - values.yaml
         - values-dev.yaml
@@ -20,3 +62,5 @@ spec:
     automated:
       prune: true
       selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

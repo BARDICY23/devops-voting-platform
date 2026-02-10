@@ -1,0 +1,13 @@
+# Monitoring-as-Code resources (Grafana dashboards + PrometheusRule alerts)
+namespace: monitoring
+
+grafanaDashboards:
+  enabled: true
+  label: grafana_dashboard
+
+prometheusRules:
+  enabled: true
+  # Default labels applied to all rules
+  commonLabels:
+    team: devops
+    app: voting-app

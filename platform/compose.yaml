@@ -1,81 +1,61 @@
 services:
-  redis:
-    image: redis:7-alpine
-    command: ["redis-server", "--appendonly", "yes"]
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 30
-    networks: [backend]
-
-  postgres:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: votes
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
-      timeout: 3s
-      retries: 30
-    networks: [backend]
-
   vote:
-    build: ./services/vote
-    environment:
-      REDIS_HOST: redis
-    depends_on:
-      redis:
-        condition: service_healthy
+    build:
+      context: ../services/vote
     ports:
       - "8080:8080"
-    networks: [frontend, backend]
-
-  result:
-    build: ./services/result
-    environment:
-      POSTGRES_HOST: postgres
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: votes
-    depends_on:
-      postgres:
-        condition: service_healthy
-    ports:
-      - "8081:8081"
-    networks: [frontend, backend]
-
-  worker:
-    build: ./services/worker
     environment:
       REDIS_HOST: redis
-      POSTGRES_HOST: postgres
-      POSTGRES_USER: postgres
+    depends_on:
+      - redis
+
+  result:
+    build:
+      context: ../services/result
+    ports:
+      - "8081:8081"
+    environment:
+      PORT: 8081
+      POSTGRES_HOST: db
+      POSTGRES_USER: voting
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: votes
     depends_on:
-      redis:
-        condition: service_healthy
-      postgres:
-        condition: service_healthy
-    networks: [backend]
+      - db
+
+  worker:
+    build:
+      context: ../services/worker
+    environment:
+      REDIS_HOST: redis
+      POSTGRES_HOST: db
+      POSTGRES_USER: voting
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: votes
+    depends_on:
+      - redis
+      - db
 
   seed-data:
-    build: ./services/seed-data
+    build:
+      context: ../services/seed-data
     environment:
-      POSTGRES_HOST: postgres
-      POSTGRES_USER: postgres
+      VOTE_URL: http://vote:8080/
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: voting
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: votes
     depends_on:
-      postgres:
-        condition: service_healthy
-    profiles: ["seed"]
-    networks: [backend]
+      - vote
+      - db
 
-networks:
-  frontend:
-  backend:
-    internal: true
+  redis:
+    image: redis:7-alpine
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: voting
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: votes

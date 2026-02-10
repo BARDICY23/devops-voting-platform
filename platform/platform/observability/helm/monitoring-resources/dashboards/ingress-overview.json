@@ -1,0 +1,70 @@
+{
+  "uid": "voting-edge",
+  "title": "Voting App - Service Health",
+  "schemaVersion": 38,
+  "version": 1,
+  "timezone": "browser",
+  "refresh": "30s",
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "Available replicas",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PROMETHEUS"
+      },
+      "targets": [
+        {
+          "expr": "kube_deployment_status_replicas_available{namespace=\"voting\", deployment=~\"vote|result|worker\"}",
+          "legendFormat": "{{deployment}}"
+        }
+      ],
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Desired replicas",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PROMETHEUS"
+      },
+      "targets": [
+        {
+          "expr": "kube_deployment_spec_replicas{namespace=\"voting\", deployment=~\"vote|result|worker\"}",
+          "legendFormat": "{{deployment}}"
+        }
+      ],
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 9
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Pod readiness (ready=1)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "PROMETHEUS"
+      },
+      "targets": [
+        {
+          "expr": "kube_pod_status_ready{namespace=\"voting\", condition=\"true\"}",
+          "legendFormat": "{{pod}}"
+        }
+      ],
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 18
+      }
+    }
+  ]
+}

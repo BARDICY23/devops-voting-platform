@@ -3,6 +3,8 @@ kind: Application
 metadata:
   name: monitoring
   namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "10"
 spec:
   project: default
   source:
@@ -10,7 +12,28 @@ spec:
     chart: kube-prometheus-stack
     targetRevision: 60.0.0
     helm:
-      valueFiles: []
+      values: |
+        grafana:
+          enabled: true
+          # Sidecar loads dashboards from ConfigMaps with label `grafana_dashboard=1`
+          sidecar:
+            dashboards:
+              enabled: true
+              label: grafana_dashboard
+              labelValue: "1"
+              searchNamespace: ALL
+            datasources:
+              enabled: true
+        
+        prometheus:
+          prometheusSpec:
+            # Allow ServiceMonitors/PodMonitors/Rules created outside this chart to be picked up
+            serviceMonitorSelectorNilUsesHelmValues: false
+            podMonitorSelectorNilUsesHelmValues: false
+            ruleSelectorNilUsesHelmValues: false
+        
+        alertmanager:
+          enabled: true
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring

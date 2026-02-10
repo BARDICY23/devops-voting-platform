@@ -1,0 +1,45 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: argocd-image-updater
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "10"
+spec:
+  project: default
+  source:
+    repoURL: https://argoproj.github.io/argo-helm
+    chart: argocd-image-updater
+    targetRevision: 1.0.4
+    helm:
+      values: |
+        rbac:
+          enabled: true
+        config:
+          # Modify Argo CD Application CRDs directly using the Kubernetes API (no Argo CD API token needed)
+          applicationsAPIKind: kubernetes
+
+          logLevel: info
+
+          # Git write-back: commit image updates back to the Git repo
+          writeBackMethod: git
+          gitCommitUser: argocd-image-updater
+          gitCommitMail: argocd-image-updater@users.noreply.github.com
+          gitCommitTemplate: |
+            chore(images): update {{ .AppName }} to {{ .NewTag }}
+
+          registries:
+            - name: Docker Hub
+              api_url: https://registry-1.docker.io
+              prefix: docker.io
+              ping: true
+
+        # If you need private repo write-back, configure a git credential secret for the repo.
+        # See docs: https://argocd-image-updater.readthedocs.io/en/stable/basics/update-methods/
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

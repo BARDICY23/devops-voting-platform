@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: voting
+  labels:
+    # Enforce Kubernetes Pod Security Standards (PSS) for application workloads.
+    # We keep platform namespaces (argocd/monitoring/external-secrets, etc.) out of this file
+    # because some controllers may require broader permissions.
+    pod-security.kubernetes.io/enforce: "restricted"
+    pod-security.kubernetes.io/audit: "restricted"
+    pod-security.kubernetes.io/warn: "restricted"

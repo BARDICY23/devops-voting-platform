@@ -1,0 +1,49 @@
+{{- if .Values.prometheusRules.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: voting-app-custom-rules
+  namespace: {{ .Values.namespace | default "monitoring" }}
+  labels:
+    {{- range $k, $v := .Values.prometheusRules.commonLabels }}
+    {{ $k }}: {{ $v | quote }}
+    {{- end }}
+spec:
+  groups:
+    - name: voting-app.health
+      rules:
+        - alert: VotingAppHighContainerRestarts
+          expr: |
+            sum by (namespace, pod, container) (
+              increase(kube_pod_container_status_restarts_total{namespace="voting"}[10m])
+            ) > 3
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High container restarts in voting namespace"
+            description: "Pod {{`{{ $labels.pod }}`}} (container {{`{{ $labels.container }}`}}) restarted more than 3 times in the last 10 minutes."
+
+        - alert: VotingAppDeploymentNotEnoughReplicas
+          expr: |
+            kube_deployment_status_replicas_available{namespace="voting", deployment=~"vote|result|worker"} 
+              < kube_deployment_spec_replicas{namespace="voting", deployment=~"vote|result|worker"}
+          for: 10m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Deployment replicas below desired"
+            description: "Deployment {{`{{ $labels.deployment }}`}} has fewer available replicas than desired for >10m."
+
+    - name: kubernetes.slo
+      rules:
+        - alert: VotingNamespacePodNotReady
+          expr: |
+            min_over_time(kube_pod_status_ready{namespace="voting", condition="true"}[10m]) == 0
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Pod not ready in voting namespace"
+            description: "One or more pods in namespace voting have been not-ready for >= 10 minutes."
+{{- end }}
