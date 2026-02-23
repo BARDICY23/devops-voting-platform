@@ -48,7 +48,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/BARDICY23/devops-voting-platform.git
-    targetRevision: platform
+    targetRevision: services
     path: platform/apps/helm/voting-app
     helm:
       releaseName: voting-app

@@ -35,7 +35,7 @@ vote:
   image:
     repository: bardicy/voting-vote
     # CI pushes both :<git-sha> and :latest; Argo Image Updater can write back the git-sha.
-    tag: "latest"
+    tag: "0.1.0"
   replicaCount: 2
   service:
     port: 80
@@ -62,7 +62,7 @@ vote:
 result:
   image:
     repository: bardicy/voting-result
-    tag: "latest"
+    tag: "0.1.0"
   replicaCount: 2
   service:
     port: 80
@@ -88,7 +88,7 @@ result:
 worker:
   image:
     repository: bardicy/voting-worker
-    tag: "latest"
+    tag: "0.1.0"
   replicaCount: 1
   resources:
     requests:
@@ -99,10 +99,10 @@ worker:
       memory: 1Gi
 
 seed:
-  enabled: true
+  enabled: false
   image:
     repository: bardicy/voting-seed-data
-    tag: "latest"
+    tag: "0.1.0"
   voteUrl: "http://vote/"
   ttlSecondsAfterFinished: 300
   activeDeadlineSeconds: 600

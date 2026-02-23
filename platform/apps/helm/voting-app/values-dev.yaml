@@ -3,10 +3,20 @@
 vote:
   ingress:
     host: vote.dark-lord.xyz
+  image:
+    tag: "latest"
 
 result:
   ingress:
     host: result.dark-lord.xyz
+  image:
+    tag: "latest"
+
+worker:
+  image:
+    tag: "latest"
+
+
 
 # Local/dev only: create a plaintext Secret so the Bitnami PostgreSQL chart + apps can start.
 # In cloud, set `secrets.create=false` and provision via External Secrets Operator.
@@ -15,3 +25,8 @@ secrets:
   postgresql:
     postgresPassword: postgres
     userPassword: postgres
+
+seed:
+  enabled: true
+  image:
+    tag: "latest"

@@ -1,0 +1,22 @@
+# Editor / OS junk
+*.swp
+*.swo
+.DS_Store
+
+# Archives / artifacts
+*.zip
+*.tar
+*.tar.gz
+
+# Python
+__pycache__/
+*.pyc
+
+# Node
+node_modules/
+
+# Terraform
+**/.terraform/
+**/*.tfstate
+**/*.tfstate.*
+
