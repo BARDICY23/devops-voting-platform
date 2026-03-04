@@ -1,0 +1,73 @@
+global:
+  imagePullPolicy: IfNotPresent
+
+# IMPORTANT: templates use .Values.topologySpread.enabled
+topologySpread:
+  enabled: false
+
+networkPolicy:
+  enabled: false
+
+vote:
+  replicaCount: 1
+  image:
+    repository: platform-vote
+    tag: latest
+  service:
+    type: ClusterIP
+    port: 80
+    targetPort: 8080
+  ingress:
+    enabled: false
+  resources: {}
+  autoscaling:
+    enabled: false
+
+result:
+  replicaCount: 1
+  image:
+    repository: platform-result
+    tag: latest
+  service:
+    type: ClusterIP
+    port: 80
+    targetPort: 8081
+  ingress:
+    enabled: false
+  resources: {}
+  autoscaling:
+    enabled: false
+
+worker:
+  replicaCount: 1
+  image:
+    repository: platform-worker
+    tag: latest
+  resources: {}
+
+seedData:
+  enabled: false
+
+# local: create secret in-chart, no ExternalSecrets
+secrets:
+  create: true
+  existingSecret: ""
+
+postgresql:
+  enabled: true
+  auth:
+    username: voting
+    password: postgres
+    database: votes
+  primary:
+    persistence:
+      enabled: false
+
+redis:
+  enabled: true
+  architecture: standalone
+  auth:
+    enabled: false
+  master:
+    persistence:
+      enabled: false

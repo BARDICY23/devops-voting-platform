@@ -1,57 +1,12 @@
 services:
-  vote:
-    build:
-      context: ../services/vote
-    ports:
-      - "8080:8080"
-    environment:
-      REDIS_HOST: redis
-    depends_on:
-      - redis
-
-  result:
-    build:
-      context: ../services/result
-    ports:
-      - "8081:8081"
-    environment:
-      PORT: 8081
-      POSTGRES_HOST: db
-      POSTGRES_USER: voting
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: votes
-    depends_on:
-      - db
-
-  worker:
-    build:
-      context: ../services/worker
-    environment:
-      REDIS_HOST: redis
-      POSTGRES_HOST: db
-      POSTGRES_USER: voting
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: votes
-    depends_on:
-      - redis
-      - db
-
-  seed-data:
-    build:
-      context: ../services/seed-data
-    environment:
-      VOTE_URL: http://vote:8080/
-      POSTGRES_HOST: db
-      POSTGRES_PORT: 5432
-      POSTGRES_USER: voting
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: votes
-    depends_on:
-      - vote
-      - db
-
   redis:
     image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
 
   db:
     image: postgres:16-alpine
@@ -59,3 +14,89 @@ services:
       POSTGRES_USER: voting
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: votes
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U voting -d votes"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  # One-shot schema initializer (prevents worker/result schema-race)
+  db-init:
+    image: postgres:16-alpine
+    environment:
+      PGPASSWORD: postgres
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["sh", "-lc", "set -e; echo 'Waiting for DB...'; until pg_isready -h db -U voting -d votes; do sleep 1; done; echo 'Creating schema...'; psql -h db -U voting -d votes -v ON_ERROR_STOP=1 -c 'CREATE TABLE IF NOT EXISTS votes (id VARCHAR(255) NOT NULL UNIQUE, vote VARCHAR(255) NOT NULL);'; echo 'Schema ready.'"]
+    restart: "no"
+
+  vote:
+    build:
+      context: ../services/vote
+    ports:
+      - "8080:8080"
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  result:
+    build:
+      context: ../services/result
+    ports:
+      - "8081:8081"
+    environment:
+      PORT: "8081"
+      POSTGRES_HOST: db
+      POSTGRES_USER: voting
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: votes
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: ../services/worker
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      POSTGRES_HOST: db
+      POSTGRES_USER: voting
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: votes
+    depends_on:
+      redis:
+        condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  seed-data:
+    build:
+      context: ../services/seed-data
+    profiles: ["seed"]
+    environment:
+      VOTE_URL: http://vote:8080/
+      POSTGRES_HOST: db
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: voting
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: votes
+    depends_on:
+      vote:
+        condition: service_started
+      db-init:
+        condition: service_completed_successfully
+    restart: "no"
+
+volumes:
+  db-data:

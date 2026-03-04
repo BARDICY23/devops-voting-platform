@@ -1,58 +1,76 @@
-from flask import Flask, render_template, request, make_response, g
-from redis import Redis
 import os
 import socket
-import random
+import uuid
 import json
-import logging
 
-option_a = os.getenv('OPTION_A', "Cats")
-option_b = os.getenv('OPTION_B', "Dogs")
-hostname = socket.gethostname()
-
-# ✅ FIX: Redis host from env with safe default
-REDIS_HOST = os.getenv("REDIS_HOST", "voting-app-redis-master")
+from flask import Flask, render_template, request, make_response
+import redis
 
 app = Flask(__name__)
 
-gunicorn_error_logger = logging.getLogger('gunicorn.error')
-app.logger.handlers.extend(gunicorn_error_logger.handlers)
-app.logger.setLevel(logging.INFO)
+option_a = os.getenv("OPTION_A", "Cats")
+option_b = os.getenv("OPTION_B", "Dogs")
+hostname = socket.gethostname()
 
-def get_redis():
-    if not hasattr(g, 'redis'):
-        g.redis = Redis(
-            host=REDIS_HOST,
-            port=6379,
-            db=0,
-            socket_timeout=5
-        )
-    return g.redis
+redis_host = os.getenv("REDIS_HOST", "redis")
+redis_port = int(os.getenv("REDIS_PORT", "6379"))
 
-@app.route("/", methods=['POST','GET'])
-def hello():
-    voter_id = request.cookies.get('voter_id')
+r = redis.Redis(
+    host=redis_host,
+    port=redis_port,
+    db=0,
+    socket_connect_timeout=2,
+    socket_timeout=2,
+    decode_responses=True,
+)
+
+@app.route("/healthz")
+def healthz():
+    try:
+        r.ping()
+        return "ok", 200
+    except Exception as e:
+        return f"redis not ready: {e}", 503
+
+@app.route("/", methods=["GET", "POST"])
+def index():
+    # Stable unique id per browser via cookie
+    voter_id = request.cookies.get("voter_id")
     if not voter_id:
-        voter_id = hex(random.getrandbits(64))[2:-1]
+        voter_id = str(uuid.uuid4())
 
-    vote = None
+    if request.method == "POST":
+        vote = request.form.get("vote")
+        if vote not in ("a", "b"):
+            return make_response("invalid vote", 400)
 
-    if request.method == 'POST':
-        redis = get_redis()
-        vote = request.form['vote']
-        app.logger.info('Received vote for %s', vote)
-        data = json.dumps({'voter_id': voter_id, 'vote': vote})
-        redis.rpush('votes', data)
+        # IMPORTANT: the .NET worker expects JSON from Redis
+        payload = json.dumps({"voter_id": voter_id, "vote": vote})
+
+        try:
+            r.rpush("votes", payload)
+        except Exception as e:
+            return make_response(f"error writing vote: {e}", 503)
+
+        resp = make_response(render_template(
+            "index.html",
+            option_a=option_a,
+            option_b=option_b,
+            hostname=hostname,
+            vote=vote
+        ))
+        resp.set_cookie("voter_id", voter_id)
+        return resp
 
     resp = make_response(render_template(
-        'index.html',
+        "index.html",
         option_a=option_a,
         option_b=option_b,
         hostname=hostname,
-        vote=vote,
+        vote=None
     ))
-    resp.set_cookie('voter_id', voter_id)
+    resp.set_cookie("voter_id", voter_id)
     return resp
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=8080, debug=True, threaded=True)
+    app.run(host="0.0.0.0", port=8080, debug=False)
