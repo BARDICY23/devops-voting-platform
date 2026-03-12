@@ -1,0 +1,80 @@
+{{- if .Values.dbInit.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ printf "%s-db-init-%d" .Release.Name .Release.Revision | quote }}
+  labels:
+    {{- include "voting-app.labels" . | nindent 4 }}
+    app.kubernetes.io/component: db-init
+spec:
+  backoffLimit: {{ .Values.dbInit.backoffLimit }}
+  ttlSecondsAfterFinished: {{ .Values.dbInit.ttlSecondsAfterFinished }}
+  activeDeadlineSeconds: {{ .Values.dbInit.activeDeadlineSeconds }}
+  template:
+    metadata:
+      labels:
+        {{- include "voting-app.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: db-init
+    spec:
+      restartPolicy: OnFailure
+      automountServiceAccountToken: false
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+        - name: tmp
+          emptyDir: {}
+      containers:
+        - name: db-init
+          image: "{{ .Values.dbInit.image.repository }}:{{ .Values.dbInit.image.tag }}"
+          imagePullPolicy: {{ default .Values.global.imagePullPolicy .Values.dbInit.image.pullPolicy | quote }}
+          env:
+            - name: POSTGRES_HOST
+              value: {{ include "voting-app.postgresqlServiceName" . | quote }}
+            - name: POSTGRES_USER
+              value: {{ .Values.postgresql.auth.username | quote }}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "voting-app.postgresqlSecretName" . | quote }}
+                  key: {{ include "voting-app.postgresqlUserPasswordKey" . | quote }}
+            - name: POSTGRES_DB
+              value: {{ .Values.postgresql.auth.database | quote }}
+          command:
+            - sh
+            - -ec
+            - |
+              echo "Waiting for PostgreSQL at ${POSTGRES_HOST}..."
+              until PGPASSWORD="${POSTGRES_PASSWORD}" pg_isready \
+                -h "${POSTGRES_HOST}" \
+                -U "${POSTGRES_USER}" \
+                -d "${POSTGRES_DB}"; do
+                sleep 2
+              done
+
+              echo "Creating votes table if needed..."
+              PGPASSWORD="${POSTGRES_PASSWORD}" psql \
+                -h "${POSTGRES_HOST}" \
+                -U "${POSTGRES_USER}" \
+                -d "${POSTGRES_DB}" \
+                -v ON_ERROR_STOP=1 <<'SQL'
+              CREATE TABLE IF NOT EXISTS votes (
+                id   VARCHAR(255) NOT NULL UNIQUE,
+                vote VARCHAR(255) NOT NULL
+              );
+              SQL
+
+              echo "votes table is ready."
+          securityContext:
+            {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+          {{- with .Values.dbInit.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+{{- end }}

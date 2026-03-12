@@ -24,6 +24,12 @@ r = redis.Redis(
     decode_responses=True,
 )
 
+
+@app.route("/livez")
+def livez():
+    return "ok", 200
+
+
 @app.route("/healthz")
 def healthz():
     try:
@@ -31,6 +37,7 @@ def healthz():
         return "ok", 200
     except Exception as e:
         return f"redis not ready: {e}", 503
+
 
 @app.route("/", methods=["GET", "POST"])
 def index():
@@ -71,6 +78,7 @@ def index():
     ))
     resp.set_cookie("voter_id", voter_id)
     return resp
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8080, debug=False)

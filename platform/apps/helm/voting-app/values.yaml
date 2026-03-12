@@ -2,6 +2,9 @@
 # Global chart configuration
 # ==================================================
 
+global:
+  imagePullPolicy: IfNotPresent
+
 imagePullSecrets: []
 nameOverride: ""
 
@@ -36,6 +39,7 @@ vote:
     repository: bardicy/voting-vote
     # CI pushes both :<git-sha> and :latest; Argo Image Updater can write back the git-sha.
     tag: "0.1.0"
+    pullPolicy: ""
   replicaCount: 2
   service:
     port: 80
@@ -63,6 +67,7 @@ result:
   image:
     repository: bardicy/voting-result
     tag: "0.1.0"
+    pullPolicy: ""
   replicaCount: 2
   service:
     port: 80
@@ -89,6 +94,7 @@ worker:
   image:
     repository: bardicy/voting-worker
     tag: "0.1.0"
+    pullPolicy: ""
   replicaCount: 1
   resources:
     requests:
@@ -103,9 +109,23 @@ seed:
   image:
     repository: bardicy/voting-seed-data
     tag: "0.1.0"
+    pullPolicy: ""
   voteUrl: "http://vote/"
   ttlSecondsAfterFinished: 300
   activeDeadlineSeconds: 600
+
+# Creates the votes table if it does not already exist.
+# Disable this only if a dedicated migration tool owns schema creation.
+dbInit:
+  enabled: true
+  image:
+    repository: docker.io/bitnamilegacy/postgresql
+    tag: "17.6.0-debian-12-r4"
+    pullPolicy: ""
+  backoffLimit: 6
+  ttlSecondsAfterFinished: 300
+  activeDeadlineSeconds: 300
+  resources: {}
 
 # ==================================================
 # Secrets contract (cloud-first)

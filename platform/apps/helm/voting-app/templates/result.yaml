@@ -35,10 +35,48 @@ spec:
               app.kubernetes.io/component: result
       {{- end }}
 
+      volumes:
+        - name: tmp
+          emptyDir: {}
+
+      initContainers:
+        - name: wait-for-votes-table
+          image: "{{ .Values.dbInit.image.repository }}:{{ .Values.dbInit.image.tag }}"
+          imagePullPolicy: {{ default .Values.global.imagePullPolicy .Values.dbInit.image.pullPolicy | quote }}
+          env:
+            - name: POSTGRES_HOST
+              value: {{ include "voting-app.postgresqlServiceName" . | quote }}
+            - name: POSTGRES_USER
+              value: {{ .Values.postgresql.auth.username | quote }}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "voting-app.postgresqlSecretName" . | quote }}
+                  key: {{ include "voting-app.postgresqlUserPasswordKey" . | quote }}
+            - name: POSTGRES_DB
+              value: {{ .Values.postgresql.auth.database | quote }}
+          command:
+            - sh
+            - -ec
+            - |
+              until PGPASSWORD="${POSTGRES_PASSWORD}" psql \
+                -h "${POSTGRES_HOST}" \
+                -U "${POSTGRES_USER}" \
+                -d "${POSTGRES_DB}" \
+                -tAc "SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'votes';" | grep -q 1; do
+                echo "Waiting for votes table..."
+                sleep 2
+              done
+          securityContext:
+            {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+
       containers:
         - name: result
           image: "{{ .Values.result.image.repository }}:{{ .Values.result.image.tag }}"
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: {{ default .Values.global.imagePullPolicy .Values.result.image.pullPolicy | quote }}
           ports:
             - name: http
               containerPort: {{ .Values.result.service.targetPort }}
@@ -61,6 +99,9 @@ spec:
 
           securityContext:
             {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
           {{- with .Values.result.resources }}
           resources:
             {{- toYaml . | nindent 12 }}

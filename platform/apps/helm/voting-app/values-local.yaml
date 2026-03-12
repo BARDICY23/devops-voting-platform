@@ -1,7 +1,6 @@
 global:
   imagePullPolicy: IfNotPresent
 
-# IMPORTANT: templates use .Values.topologySpread.enabled
 topologySpread:
   enabled: false
 
@@ -11,8 +10,9 @@ networkPolicy:
 vote:
   replicaCount: 1
   image:
-    repository: platform-vote
+    repository: docker.io/library/platform-vote
     tag: latest
+    pullPolicy: Never
   service:
     type: ClusterIP
     port: 80
@@ -26,8 +26,9 @@ vote:
 result:
   replicaCount: 1
   image:
-    repository: platform-result
+    repository: docker.io/library/platform-result
     tag: latest
+    pullPolicy: Never
   service:
     type: ClusterIP
     port: 80
@@ -41,20 +42,39 @@ result:
 worker:
   replicaCount: 1
   image:
-    repository: platform-worker
+    repository: docker.io/library/platform-worker
     tag: latest
+    pullPolicy: Never
   resources: {}
 
-seedData:
+seed:
   enabled: false
+  image:
+    repository: docker.io/library/platform-seed-data
+    tag: latest
+    pullPolicy: Never
 
-# local: create secret in-chart, no ExternalSecrets
+# Pullable schema-init image used by the Job + initContainers that gate result/worker startup.
+dbInit:
+  enabled: true
+  image:
+    repository: docker.io/bitnamilegacy/postgresql
+    tag: "17.6.0-debian-12-r4"
+    pullPolicy: IfNotPresent
+
 secrets:
   create: true
   existingSecret: ""
+  postgresql:
+    postgresPassword: postgres
+    userPassword: postgres
 
 postgresql:
   enabled: true
+  image:
+    registry: docker.io
+    repository: bitnamilegacy/postgresql
+    tag: 17.6.0-debian-12-r4
   auth:
     username: voting
     password: postgres
@@ -65,6 +85,10 @@ postgresql:
 
 redis:
   enabled: true
+  image:
+    registry: docker.io
+    repository: bitnamilegacy/redis
+    tag: 8.2.1-debian-12-r0
   architecture: standalone
   auth:
     enabled: false

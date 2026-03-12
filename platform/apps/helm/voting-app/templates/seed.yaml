@@ -27,7 +27,7 @@ spec:
       containers:
         - name: seed
           image: "{{ .Values.seed.image.repository }}:{{ .Values.seed.image.tag }}"
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: {{ default .Values.global.imagePullPolicy .Values.seed.image.pullPolicy | quote }}
           env:
             - name: VOTE_URL
               value: {{ .Values.seed.voteUrl | quote }}

@@ -35,10 +35,14 @@ spec:
               app.kubernetes.io/component: vote
       {{- end }}
 
+      volumes:
+        - name: tmp
+          emptyDir: {}
+
       containers:
         - name: vote
           image: "{{ .Values.vote.image.repository }}:{{ .Values.vote.image.tag }}"
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: {{ default .Values.global.imagePullPolicy .Values.vote.image.pullPolicy | quote }}
           ports:
             - name: http
               containerPort: {{ .Values.vote.service.targetPort }}
@@ -47,25 +51,28 @@ spec:
               value: {{ include "voting-app.redisMasterServiceName" . | quote }}
           securityContext:
             {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
           {{- with .Values.vote.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           readinessProbe:
             httpGet:
-              path: /
+              path: /healthz
               port: http
-            initialDelaySeconds: 5
-            periodSeconds: 10
-            timeoutSeconds: 3
-            failureThreshold: 6
+            initialDelaySeconds: 3
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 3
           livenessProbe:
             httpGet:
-              path: /
+              path: /livez
               port: http
-            initialDelaySeconds: 20
-            periodSeconds: 20
-            timeoutSeconds: 3
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 2
             failureThreshold: 3
 ---
 apiVersion: v1

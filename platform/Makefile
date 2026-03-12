@@ -1,8 +1,11 @@
 SHELL := /bin/bash
 
 KIND_CLUSTER ?= tqp
+MINIKUBE_PROFILE ?= minikube
+KUBE_NAMESPACE ?= voting-app
+HELM_RELEASE ?= voting-app
 
-.PHONY: kind-up kind-down base-apply argocd-bootstrap helm-app-install helm-app-uninstall
+.PHONY: kind-up kind-down base-apply argocd-bootstrap helm-app-install helm-app-uninstall minikube-local-deploy
 
 kind-up:
 	kind create cluster --name $(KIND_CLUSTER) --config scripts/kind-config.yaml || true
@@ -26,3 +29,7 @@ helm-app-install:
 
 helm-app-uninstall:
 	helm uninstall voting-app -n voting || true
+
+# Deterministic local deploy for Minikube using the running node runtime.
+minikube-local-deploy:
+	MINIKUBE_PROFILE=$(MINIKUBE_PROFILE) KUBE_NAMESPACE=$(KUBE_NAMESPACE) HELM_RELEASE=$(HELM_RELEASE) ./scripts/minikube-local-deploy.sh
