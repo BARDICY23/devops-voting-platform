@@ -2,7 +2,7 @@
 set -euo pipefail
 
 PROFILE="${MINIKUBE_PROFILE:-minikube}"
-NAMESPACE="${KUBE_NAMESPACE:-voting-app}"
+NAMESPACE="${KUBE_NAMESPACE:-voting}"
 RELEASE="${HELM_RELEASE:-voting-app}"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 CHART_DIR="${ROOT_DIR}/platform/apps/helm/voting-app"
@@ -126,9 +126,9 @@ kubectl -n "${NAMESPACE}" get pods -o wide
 cat <<'EOF'
 
 Next checks:
-  kubectl -n voting-app port-forward svc/vote 8080:80
-  kubectl -n voting-app port-forward svc/result 8081:80
-  kubectl -n voting-app exec -it voting-app-redis-master-0 -- redis-cli LRANGE votes 0 5
-  kubectl -n voting-app logs deploy/worker --tail=120
-  kubectl -n voting-app exec -it voting-app-postgresql-0 -- bash -lc 'PGPASSWORD=postgres psql -U voting -d votes -c "SELECT vote, COUNT(*) FROM votes GROUP BY vote;"'
+  kubectl -n voting port-forward svc/vote 8080:80
+  kubectl -n voting port-forward svc/result 8081:80
+  kubectl -n voting exec -it voting-app-redis-master-0 -- redis-cli LRANGE votes 0 5
+  kubectl -n voting logs deploy/worker --tail=120
+  kubectl -n voting exec -it voting-app-postgresql-0 -- bash -lc 'PGPASSWORD=postgres psql -U voting -d votes -c "SELECT vote, COUNT(*) FROM votes GROUP BY vote;"'
 EOF

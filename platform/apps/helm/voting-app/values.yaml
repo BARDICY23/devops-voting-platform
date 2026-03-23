@@ -5,6 +5,9 @@
 global:
   imagePullPolicy: IfNotPresent
 
+networkPolicy:
+  enabled: true
+
 imagePullSecrets: []
 nameOverride: ""
 
