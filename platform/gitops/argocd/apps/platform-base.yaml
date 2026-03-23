@@ -1,14 +1,16 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: platform-root
+  name: platform-base
   namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
 spec:
   project: default
   source:
     repoURL: https://github.com/BARDICY23/devops-voting-platform.git
-    targetRevision: services
-    path: platform/platform/argocd/apps
+    targetRevision: main
+    path: platform/gitops/base
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd
@@ -16,5 +18,3 @@ spec:
     automated:
       prune: true
       selfHeal: true
-    syncOptions:
-      - CreateNamespace=true
