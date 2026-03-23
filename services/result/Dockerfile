@@ -14,6 +14,6 @@ RUN addgroup -g 10001 appgroup \
 
 USER 10001
 
-EXPOSE 4000
+EXPOSE 8081
 CMD ["node", "server.js"]
 
