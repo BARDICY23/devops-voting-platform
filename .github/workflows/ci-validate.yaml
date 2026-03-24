@@ -67,6 +67,9 @@ jobs:
       - name: Validate Compose syntax
         run: docker compose -f platform/local/compose.yaml config >/dev/null
 
+      - name: Add Bitnami Helm repo
+        run: helm repo add bitnami https://charts.bitnami.com/bitnami 
+
       - name: Build Helm dependencies
         run: helm dependency build platform/apps/helm/voting-app
 
