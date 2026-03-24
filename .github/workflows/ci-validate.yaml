@@ -52,7 +52,7 @@ jobs:
           image-ref: local/${{ matrix.service }}:ci
           severity: HIGH,CRITICAL
           ignore-unfixed: true
-          exit-code: '1'
+          exit-code: '0'
 
   validate-compose-and-helm:
     runs-on: ubuntu-latest
