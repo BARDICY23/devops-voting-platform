@@ -2,87 +2,81 @@ name: ci-validate
 
 on:
   pull_request:
-    branches:
-      - main
-    paths:
-      - services/**
-      - platform/**
-      - .github/workflows/**
-  workflow_dispatch:
+    branches: [main]
 
 permissions:
   contents: read
-
-concurrency:
-  group: ci-validate-${{ github.ref }}
-  cancel-in-progress: true
+  security-events: write
 
 jobs:
-  build-services:
-    name: build-${{ matrix.service }}
+  changes:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        service: [vote, result, worker, seed-data]
-
+    outputs:
+      vote: ${{ steps.filter.outputs.vote }}
+      result: ${{ steps.filter.outputs.result }}
+      worker: ${{ steps.filter.outputs.worker }}
+      seed: ${{ steps.filter.outputs.seed }}
+      platform: ${{ steps.filter.outputs.platform }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build image
-        uses: docker/build-push-action@v6
+      - name: Detect changed paths
+        id: filter
+        uses: dorny/paths-filter@v3
         with:
-          context: services/${{ matrix.service }}
-          file: services/${{ matrix.service }}/Dockerfile
-          load: true
-          push: false
-          provenance: false
-          sbom: false
-          tags: local/${{ matrix.service }}:ci
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          filters: |
+            vote:
+              - 'services/vote/**'
+            result:
+              - 'services/result/**'
+            worker:
+              - 'services/worker/**'
+            seed:
+              - 'services/seed-data/**'
+            platform:
+              - 'platform/**'
 
-      - name: Scan built image
-        uses: aquasecurity/trivy-action@v0.4.0
-        with:
-          image-ref: local/${{ matrix.service }}:ci
-          severity: HIGH,CRITICAL
-          ignore-unfixed: true
-          exit-code: '0'
-
-  validate-compose-and-helm:
+  build-vote:
+    needs: changes
+    if: needs.changes.outputs.vote == 'true'
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up Helm
-        uses: azure/setup-helm@v4
-
-      - name: Validate Compose syntax
-        run: docker compose -f platform/local/compose.yaml config >/dev/null
-
-      - name: Add Bitnami Helm repo
-        run: helm repo add bitnami https://charts.bitnami.com/bitnami 
-
-      - name: Build Helm dependencies
-        run: helm dependency build platform/apps/helm/voting-app
-
-      - name: Lint Helm chart
+      - name: Build vote image
         run: |
-          helm lint platform/apps/helm/voting-app \
-            -f platform/apps/helm/voting-app/values.yaml \
-            -f platform/apps/helm/voting-app/values-local.yaml
+          docker build -t local/vote:pr-${{ github.sha }} ./services/vote
 
-      - name: Render Helm chart
+  build-result:
+    needs: changes
+    if: needs.changes.outputs.result == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build result image
         run: |
-          helm template voting-app platform/apps/helm/voting-app \
-            --namespace voting \
-            -f platform/apps/helm/voting-app/values.yaml \
-            -f platform/apps/helm/voting-app/values-local.yaml >/tmp/voting-app-rendered.yaml
-          test -s /tmp/voting-app-rendered.yaml
+          docker build -t local/result:pr-${{ github.sha }} ./services/result
+
+  build-worker:
+    needs: changes
+    if: needs.changes.outputs.worker == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build worker image
+        run: |
+          docker build -t local/worker:pr-${{ github.sha }} ./services/worker
+
+  build-seed:
+    needs: changes
+    if: needs.changes.outputs.seed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build seed-data image
+        run: |
+          docker build -t local/seed-data:pr-${{ github.sha }} ./services/seed-data

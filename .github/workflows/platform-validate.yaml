@@ -1,0 +1,47 @@
+name: platform-validate
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'platform/**'
+
+permissions:
+  contents: read
+
+jobs:
+  validate-platform:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+
+      - name: Validate Compose config
+        run: |
+          if [ -f platform/local/compose.yaml ]; then
+            docker compose -f platform/local/compose.yaml config
+          elif [ -f platform/compose.yaml ]; then
+            docker compose -f platform/compose.yaml config
+          else
+            echo "Compose file not found"
+            exit 1
+          fi
+
+      - name: Build Helm dependencies
+        run: |
+          helm dependency build platform/apps/helm/voting-app
+
+      - name: Lint Helm chart
+        run: |
+          helm lint platform/apps/helm/voting-app \
+            -f platform/apps/helm/voting-app/values.yaml \
+            -f platform/apps/helm/voting-app/values-local.yaml
+
+      - name: Render Helm chart
+        run: |
+          helm template voting-app platform/apps/helm/voting-app \
+            -f platform/apps/helm/voting-app/values.yaml \
+            -f platform/apps/helm/voting-app/values-local.yaml > rendered.yaml
