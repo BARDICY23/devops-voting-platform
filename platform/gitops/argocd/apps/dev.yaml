@@ -49,7 +49,7 @@ spec:
   source:
     repoURL: https://github.com/BARDICY23/devops-voting-platform.git
     targetRevision: main
-    path: gitops/apps/helm/voting-app
+    path: platform/apps/helm/voting-app
     helm:
       releaseName: voting-app
       valueFiles:
