@@ -1,0 +1,82 @@
+name: ci-validate
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      vote: ${{ steps.filter.outputs.vote }}
+      result: ${{ steps.filter.outputs.result }}
+      worker: ${{ steps.filter.outputs.worker }}
+      seed: ${{ steps.filter.outputs.seed }}
+      platform: ${{ steps.filter.outputs.platform }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Detect changed paths
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            vote:
+              - 'services/vote/**'
+            result:
+              - 'services/result/**'
+            worker:
+              - 'services/worker/**'
+            seed:
+              - 'services/seed-data/**'
+            platform:
+              - 'platform/**'
+
+  build-vote:
+    needs: changes
+    if: needs.changes.outputs.vote == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build vote image
+        run: |
+          docker build -t local/vote:pr-${{ github.sha }} ./services/vote
+
+  build-result:
+    needs: changes
+    if: needs.changes.outputs.result == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build result image
+        run: |
+          docker build -t local/result:pr-${{ github.sha }} ./services/result
+
+  build-worker:
+    needs: changes
+    if: needs.changes.outputs.worker == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build worker image
+        run: |
+          docker build -t local/worker:pr-${{ github.sha }} ./services/worker
+
+  build-seed:
+    needs: changes
+    if: needs.changes.outputs.seed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build seed-data image
+        run: |
+          docker build -t local/seed-data:pr-${{ github.sha }} ./services/seed-data

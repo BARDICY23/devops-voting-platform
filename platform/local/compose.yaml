@@ -1,6 +1,10 @@
+name: voting-platform-local
+
 services:
   redis:
     image: redis:7-alpine
+    networks:
+      - backend
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -16,6 +20,8 @@ services:
       POSTGRES_DB: votes
     volumes:
       - db-data:/var/lib/postgresql/data
+    networks:
+      - backend
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U voting -d votes"]
       interval: 5s
@@ -23,33 +29,57 @@ services:
       retries: 20
     restart: unless-stopped
 
-  # One-shot schema initializer (prevents worker/result schema-race)
   db-init:
     image: postgres:16-alpine
     environment:
       PGPASSWORD: postgres
+    networks:
+      - backend
     depends_on:
       db:
         condition: service_healthy
-    command: ["sh", "-lc", "set -e; echo 'Waiting for DB...'; until pg_isready -h db -U voting -d votes; do sleep 1; done; echo 'Creating schema...'; psql -h db -U voting -d votes -v ON_ERROR_STOP=1 -c 'CREATE TABLE IF NOT EXISTS votes (id VARCHAR(255) NOT NULL UNIQUE, vote VARCHAR(255) NOT NULL);'; echo 'Schema ready.'"]
+    command:
+      - sh
+      - -lc
+      - >-
+        set -e;
+        echo 'Waiting for DB...';
+        until pg_isready -h db -U voting -d votes; do sleep 1; done;
+        echo 'Creating schema...';
+        psql -h db -U voting -d votes -v ON_ERROR_STOP=1
+        -c 'CREATE TABLE IF NOT EXISTS votes (id VARCHAR(255) NOT NULL UNIQUE, vote VARCHAR(255) NOT NULL);';
+        echo 'Schema ready.'
     restart: "no"
 
   vote:
     build:
-      context: ../services/vote
+      context: ../../services/vote
     ports:
       - "8080:8080"
     environment:
       REDIS_HOST: redis
       REDIS_PORT: "6379"
+    networks:
+      - frontend
+      - backend
     depends_on:
       redis:
         condition: service_healthy
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          python -c "import urllib.request;
+          urllib.request.urlopen('http://127.0.0.1:8080/healthz', timeout=2)"
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
     restart: unless-stopped
 
   result:
     build:
-      context: ../services/result
+      context: ../../services/result
     ports:
       - "8081:8081"
     environment:
@@ -58,14 +88,23 @@ services:
       POSTGRES_USER: voting
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: votes
+    networks:
+      - frontend
+      - backend
     depends_on:
       db-init:
         condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8081/ || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
     restart: unless-stopped
 
   worker:
     build:
-      context: ../services/worker
+      context: ../../services/worker
     environment:
       REDIS_HOST: redis
       REDIS_PORT: "6379"
@@ -73,6 +112,8 @@ services:
       POSTGRES_USER: voting
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: votes
+    networks:
+      - backend
     depends_on:
       redis:
         condition: service_healthy
@@ -82,7 +123,7 @@ services:
 
   seed-data:
     build:
-      context: ../services/seed-data
+      context: ../../services/seed-data
     profiles: ["seed"]
     environment:
       VOTE_URL: http://vote:8080/
@@ -91,12 +132,21 @@ services:
       POSTGRES_USER: voting
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: votes
+    networks:
+      - backend
     depends_on:
       vote:
-        condition: service_started
+        condition: service_healthy
       db-init:
         condition: service_completed_successfully
     restart: "no"
+
+networks:
+  frontend:
+    driver: bridge
+  backend:
+    driver: bridge
+    internal: true
 
 volumes:
   db-data:

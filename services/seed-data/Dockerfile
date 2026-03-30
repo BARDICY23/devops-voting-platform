@@ -15,7 +15,7 @@ RUN python3 make-data.py && \
     chmod +x generate-votes.sh entrypoint.sh && \
     chown -R appuser:appuser /app
 
-USER appuser
+USER 10001
 
 ENTRYPOINT ["./entrypoint.sh"]
 
