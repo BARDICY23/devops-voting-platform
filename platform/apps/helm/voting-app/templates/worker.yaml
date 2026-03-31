@@ -87,6 +87,30 @@ spec:
           volumeMounts:
             - name: tmp
               mountPath: /tmp
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  # worker is alive if the process is running
+                  pgrep -f "Worker" > /dev/null
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  pgrep -f "Worker" > /dev/null
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          
           {{- with .Values.worker.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
