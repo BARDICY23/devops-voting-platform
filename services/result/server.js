@@ -13,7 +13,7 @@ const POSTGRES_USER = process.env.POSTGRES_USER || "postgres";
 const POSTGRES_PASSWORD = process.env.POSTGRES_PASSWORD || "postgres";
 const POSTGRES_DB = process.env.POSTGRES_DB || "postgres";
 
-var port = process.env.PORT || 4000;
+var port = process.env.PORT || 8081;
 
 io.on('connection', function (socket) {
   socket.emit('message', { text: 'Welcome!' });

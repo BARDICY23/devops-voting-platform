@@ -2,7 +2,7 @@ SHELL := /bin/bash
 
 KIND_CLUSTER ?= tqp
 MINIKUBE_PROFILE ?= minikube
-KUBE_NAMESPACE ?= voting-app
+KUBE_NAMESPACE ?= voting
 HELM_RELEASE ?= voting-app
 
 .PHONY: kind-up kind-down base-apply argocd-bootstrap helm-app-install helm-app-uninstall minikube-local-deploy
@@ -15,12 +15,12 @@ kind-down:
 
 # Apply platform base (namespaces + PSA labels)
 base-apply:
-	kubectl apply -k platform/base
+	kubectl apply -k gitops/base
 
 # Bootstrap ArgoCD (App of Apps)
 # NOTE: ArgoCD itself must already be installed in the argocd namespace.
 argocd-bootstrap:
-	kubectl apply -f platform/argocd/bootstrap/app-of-apps.yaml
+	kubectl apply -f gitops/argocd/bootstrap/app-of-apps.yaml
 
 # Optional: install the app via Helm directly (without Argo)
 helm-app-install:

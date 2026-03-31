@@ -10,8 +10,8 @@ spec:
   project: default
   source:
     repoURL: https://github.com/BARDICY23/devops-voting-platform.git
-    targetRevision: services
-    path: platform/platform/observability/helm/monitoring-resources
+    targetRevision: main
+    path: platform/observability/helm/monitoring-resources
     helm:
       releaseName: monitoring-resources
       valueFiles:

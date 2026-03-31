@@ -1,0 +1,12 @@
+## DevOps voting-app platform 
+-----------------------------
+a full DevOps platform walking towards being a production-grade setup
+
+###tools### k8s, helm, docker, gitops(argoCD), CI(GH actions), terraform -> AWS, prometheus, grafana.
+-----------------------------------------------------------------------------------------------------
+a devops platform to apply devops practices in from dockerization to deployment then monitoring with a production practices like
+-helm for a clean, reusable and scalable way of deploying apps via k8s
+--zero trust network model with default deny all 
+-seperate env values for production vs dev 
+-
+
