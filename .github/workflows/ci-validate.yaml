@@ -1,193 +1,182 @@
 name: ci-validate
 
 on:
-pull_request:
-branches: [main]
+  pull_request:
+    branches: [main]
 
 permissions:
-contents: read
-security-events: write
+  contents: read
+  security-events: write
 
 jobs:
-changes:
-runs-on: ubuntu-latest
-outputs:
-vote: ${{ steps.filter.outputs.vote }}
-result: ${{ steps.filter.outputs.result }}
-worker: ${{ steps.filter.outputs.worker }}
-seed: ${{ steps.filter.outputs.seed }}
-platform: ${{ steps.filter.outputs.platform }}
-steps:
-- name: Checkout
-uses: actions/checkout@v4
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      vote: ${{ steps.filter.outputs.vote }}
+      result: ${{ steps.filter.outputs.result }}
+      worker: ${{ steps.filter.outputs.worker }}
+      seed: ${{ steps.filter.outputs.seed }}
+      platform: ${{ steps.filter.outputs.platform }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-```
-  - name: Detect changed paths
-    id: filter
-    uses: dorny/paths-filter@v3
-    with:
-      filters: |
-        vote:
-          - 'services/vote/**'
-        result:
-          - 'services/result/**'
-        worker:
-          - 'services/worker/**'
-        seed:
-          - 'services/seed-data/**'
-        platform:
-          - 'platform/**'
-```
+      - name: Detect changed paths
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            vote:
+              - 'services/vote/**'
+            result:
+              - 'services/result/**'
+            worker:
+              - 'services/worker/**'
+            seed:
+              - 'services/seed-data/**'
+            platform:
+              - 'platform/**'
 
-build-vote:
-needs: changes
-if: needs.changes.outputs.vote == 'true'
-runs-on: ubuntu-latest
-steps:
-- uses: actions/checkout@v4
+  build-vote:
+    needs: changes
+    if: needs.changes.outputs.vote == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
-```
-  - name: Set up Docker Buildx
-    uses: docker/setup-buildx-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-  - name: Build vote image
-    uses: docker/build-push-action@v6
-    with:
-      context: ./services/vote
-      load: true
-      push: false
-      tags: local/vote:pr-${{ github.sha }}
-      cache-from: type=gha
-      cache-to: type=gha,mode=max
+      - name: Build vote image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./services/vote
+          load: true
+          push: false
+          tags: local/vote:pr-${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-  - name: Scan vote image
-    uses: aquasecurity/trivy-action@v0.28.0
-    with:
-      image-ref: local/vote:pr-${{ github.sha }}
-      severity: HIGH,CRITICAL
-      ignore-unfixed: true
-      exit-code: '1'
-      format: sarif
-      output: trivy-vote.sarif
+      - name: Scan vote image
+        uses: aquasecurity/trivy-action@v0.28.0
+        with:
+          image-ref: local/vote:pr-${{ github.sha }}
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: '1'
+          format: sarif
+          output: trivy-vote.sarif
 
-  - name: Upload Trivy results
-    uses: github/codeql-action/upload-sarif@v3
-    if: always()
-    with:
-      sarif_file: trivy-vote.sarif
-```
+      - name: Upload Trivy results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-vote.sarif
 
-build-result:
-needs: changes
-if: needs.changes.outputs.result == 'true'
-runs-on: ubuntu-latest
-steps:
-- uses: actions/checkout@v4
+  build-result:
+    needs: changes
+    if: needs.changes.outputs.result == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
-```
-  - name: Set up Docker Buildx
-    uses: docker/setup-buildx-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-  - name: Build result image
-    uses: docker/build-push-action@v6
-    with:
-      context: ./services/result
-      load: true
-      push: false
-      tags: local/result:pr-${{ github.sha }}
-      cache-from: type=gha
-      cache-to: type=gha,mode=max
+      - name: Build result image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./services/result
+          load: true
+          push: false
+          tags: local/result:pr-${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-  - name: Scan result image
-    uses: aquasecurity/trivy-action@v0.28.0
-    with:
-      image-ref: local/result:pr-${{ github.sha }}
-      severity: HIGH,CRITICAL
-      ignore-unfixed: true
-      exit-code: '1'
-      format: sarif
-      output: trivy-result.sarif
+      - name: Scan result image
+        uses: aquasecurity/trivy-action@v0.28.0
+        with:
+          image-ref: local/result:pr-${{ github.sha }}
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: '1'
+          format: sarif
+          output: trivy-result.sarif
 
-  - name: Upload Trivy results
-    uses: github/codeql-action/upload-sarif@v3
-    if: always()
-    with:
-      sarif_file: trivy-result.sarif
-```
+      - name: Upload Trivy results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-result.sarif
 
-build-worker:
-needs: changes
-if: needs.changes.outputs.worker == 'true'
-runs-on: ubuntu-latest
-steps:
-- uses: actions/checkout@v4
+  build-worker:
+    needs: changes
+    if: needs.changes.outputs.worker == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
-```
-  - name: Set up Docker Buildx
-    uses: docker/setup-buildx-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-  - name: Build worker image
-    uses: docker/build-push-action@v6
-    with:
-      context: ./services/worker
-      load: true
-      push: false
-      tags: local/worker:pr-${{ github.sha }}
-      cache-from: type=gha
-      cache-to: type=gha,mode=max
+      - name: Build worker image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./services/worker
+          load: true
+          push: false
+          tags: local/worker:pr-${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-  - name: Scan worker image
-    uses: aquasecurity/trivy-action@v0.28.0
-    with:
-      image-ref: local/worker:pr-${{ github.sha }}
-      severity: HIGH,CRITICAL
-      ignore-unfixed: true
-      exit-code: '1'
-      format: sarif
-      output: trivy-worker.sarif
+      - name: Scan worker image
+        uses: aquasecurity/trivy-action@v0.28.0
+        with:
+          image-ref: local/worker:pr-${{ github.sha }}
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: '1'
+          format: sarif
+          output: trivy-worker.sarif
 
-  - name: Upload Trivy results
-    uses: github/codeql-action/upload-sarif@v3
-    if: always()
-    with:
-      sarif_file: trivy-worker.sarif
-```
+      - name: Upload Trivy results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-worker.sarif
 
-build-seed:
-needs: changes
-if: needs.changes.outputs.seed == 'true'
-runs-on: ubuntu-latest
-steps:
-- uses: actions/checkout@v4
+  build-seed:
+    needs: changes
+    if: needs.changes.outputs.seed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
-```
-  - name: Set up Docker Buildx
-    uses: docker/setup-buildx-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-  - name: Build seed-data image
-    uses: docker/build-push-action@v6
-    with:
-      context: ./services/seed-data
-      load: true
-      push: false
-      tags: local/seed-data:pr-${{ github.sha }}
-      cache-from: type=gha
-      cache-to: type=gha,mode=max
+      - name: Build seed-data image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./services/seed-data
+          load: true
+          push: false
+          tags: local/seed-data:pr-${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-  - name: Scan seed-data image
-    uses: aquasecurity/trivy-action@v0.28.0
-    with:
-      image-ref: local/seed-data:pr-${{ github.sha }}
-      severity: HIGH,CRITICAL
-      ignore-unfixed: true
-      exit-code: '1'
-      format: sarif
-      output: trivy-seed.sarif
+      - name: Scan seed-data image
+        uses: aquasecurity/trivy-action@v0.28.0
+        with:
+          image-ref: local/seed-data:pr-${{ github.sha }}
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: '1'
+          format: sarif
+          output: trivy-seed.sarif
 
-  - name: Upload Trivy results
-    uses: github/codeql-action/upload-sarif@v3
-    if: always()
-    with:
-      sarif_file: trivy-seed.sarif
-```
-
+      - name: Upload Trivy results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-seed.sarif

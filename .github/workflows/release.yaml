@@ -42,6 +42,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
@@ -54,8 +57,26 @@ jobs:
           context: ./services/vote
           push: true
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/vote:${{ github.sha }}
-            ${{ secrets.DOCKERHUB_USERNAME }}/vote:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/voting-vote:${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/voting-vote:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Scan pushed vote image
+        uses: aquasecurity/trivy-action@v0.28.0
+        with:
+          image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/voting-vote:${{ github.sha }}
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: '1'
+          format: sarif
+          output: trivy-vote.sarif
+
+      - name: Upload Trivy results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-vote.sarif
 
   push-result:
     needs: changes
@@ -63,6 +84,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
@@ -76,8 +100,26 @@ jobs:
           context: ./services/result
           push: true
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/result:${{ github.sha }}
-            ${{ secrets.DOCKERHUB_USERNAME }}/result:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/voting-result:${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/voting-result:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Scan pushed result image
+        uses: aquasecurity/trivy-action@v0.28.0
+        with:
+          image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/voting-result:${{ github.sha }}
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: '1'
+          format: sarif
+          output: trivy-result.sarif
+
+      - name: Upload Trivy results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-result.sarif
 
   push-worker:
     needs: changes
@@ -85,6 +127,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
@@ -98,8 +143,26 @@ jobs:
           context: ./services/worker
           push: true
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/worker:${{ github.sha }}
-            ${{ secrets.DOCKERHUB_USERNAME }}/worker:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/voting-worker:${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/voting-worker:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Scan pushed worker image
+        uses: aquasecurity/trivy-action@v0.28.0
+        with:
+          image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/voting-worker:${{ github.sha }}
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: '1'
+          format: sarif
+          output: trivy-worker.sarif
+
+      - name: Upload Trivy results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-worker.sarif
 
   push-seed:
     needs: changes
@@ -107,6 +170,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
@@ -120,5 +186,23 @@ jobs:
           context: ./services/seed-data
           push: true
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/seed-data:${{ github.sha }}
-            ${{ secrets.DOCKERHUB_USERNAME }}/seed-data:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/voting-seed-data:${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/voting-seed-data:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Scan pushed seed-data image
+        uses: aquasecurity/trivy-action@v0.28.0
+        with:
+          image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/voting-seed-data:${{ github.sha }}
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: '1'
+          format: sarif
+          output: trivy-seed.sarif
+
+      - name: Upload Trivy results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-seed.sarif
