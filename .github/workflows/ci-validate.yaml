@@ -37,6 +37,17 @@ jobs:
             platform:
               - 'platform/**'
 
+  dependency-review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Dependency review
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+
   build-vote:
     needs: changes
     if: needs.changes.outputs.vote == 'true'
