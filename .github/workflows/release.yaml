@@ -63,7 +63,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Scan pushed vote image
-        uses: aquasecurity/trivy-action@v0.69.3
+        uses: aquasecurity/trivy-action@v0.28.0
         with:
           image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/voting-vote:${{ github.sha }}
           severity: HIGH,CRITICAL
