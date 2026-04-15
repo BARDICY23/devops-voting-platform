@@ -5,16 +5,19 @@ vote:
     host: vote.dark-lord.xyz
   image:
     tag: "latest"
+    pullPolicy: Always
 
 result:
   ingress:
     host: result.dark-lord.xyz
   image:
     tag: "latest"
+    pullPolicy: Always
 
 worker:
   image:
     tag: "latest"
+    pullPolicy: Always
 
 
 
@@ -31,9 +34,11 @@ seed:
   image:
     tag: "latest"
 
-# Override stale Redis image tag (7.2.5-debian-12-r4 removed from DockerHub)
+# Override stale Redis image
 redis:
   image:
-    tag: "7.4.3-debian-12-r0"
+    registry: docker.io
+    repository: bitnamilegacy/redis
+    tag: "8.2.1-debian-12-r0"
   replica:
     replicaCount: 1
