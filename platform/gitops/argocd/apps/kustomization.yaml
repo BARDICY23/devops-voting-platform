@@ -5,5 +5,5 @@ resources:
   - dev.yaml
   - monitoring.yaml
   - monitoring-resources.yaml
-  - external-secrets.yaml
+  # - external-secrets.yaml
   - image-updater.yaml
