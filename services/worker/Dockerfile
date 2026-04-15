@@ -14,6 +14,9 @@ WORKDIR /app
 
 COPY --from=build /app .
 
+# Install procps to provide pgrep for liveness/readiness probes
+RUN apt-get update && apt-get install -y procps && rm -rf /var/lib/apt/lists/*
+
 # aspnet image uses UID 64198 → PSA compliant
 USER 64198
 
