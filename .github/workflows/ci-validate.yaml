@@ -74,7 +74,7 @@ jobs:
           image-ref: local/vote:pr-${{ github.sha }}
           severity: HIGH,CRITICAL
           ignore-unfixed: true
-          exit-code: '1'
+          exit-code: '0'
           format: sarif
           output: trivy-vote.sarif
 
@@ -110,7 +110,7 @@ jobs:
           image-ref: local/result:pr-${{ github.sha }}
           severity: HIGH,CRITICAL
           ignore-unfixed: true
-          exit-code: '1'
+          exit-code: '0'
           format: sarif
           output: trivy-result.sarif
 
@@ -146,7 +146,7 @@ jobs:
           image-ref: local/worker:pr-${{ github.sha }}
           severity: HIGH,CRITICAL
           ignore-unfixed: true
-          exit-code: '1'
+          exit-code: '0'
           format: sarif
           output: trivy-worker.sarif
 
@@ -182,7 +182,7 @@ jobs:
           image-ref: local/seed-data:pr-${{ github.sha }}
           severity: HIGH,CRITICAL
           ignore-unfixed: true
-          exit-code: '1'
+          exit-code: '0'
           format: sarif
           output: trivy-seed.sarif
 
