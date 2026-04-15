@@ -69,7 +69,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Scan vote image
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.20.0
         with:
           image-ref: local/vote:pr-${{ github.sha }}
           severity: HIGH,CRITICAL
@@ -105,7 +105,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Scan result image
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@0.20.0
         with:
           image-ref: local/result:pr-${{ github.sha }}
           severity: HIGH,CRITICAL
@@ -141,7 +141,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Scan worker image
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@0.20.0
         with:
           image-ref: local/worker:pr-${{ github.sha }}
           severity: HIGH,CRITICAL
@@ -177,7 +177,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Scan seed-data image
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@0.20.0
         with:
           image-ref: local/seed-data:pr-${{ github.sha }}
           severity: HIGH,CRITICAL
