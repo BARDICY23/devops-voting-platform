@@ -7,7 +7,7 @@ var express = require('express'),
   io = require('socket.io')(server),
   path = require('path');
 
-// ✅ FIX: DB config from env
+// ✅ FIX:  DB config from env
 const POSTGRES_HOST = process.env.POSTGRES_HOST || "voting-app-postgresql";
 const POSTGRES_USER = process.env.POSTGRES_USER || "postgres";
 const POSTGRES_PASSWORD = process.env.POSTGRES_PASSWORD || "postgres";
