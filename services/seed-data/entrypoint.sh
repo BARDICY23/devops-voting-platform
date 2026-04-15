@@ -1,6 +1,6 @@
 #!/bin/sh
 set -e
-#
+
 : "${POSTGRES_PASSWORD:?Need to set POSTGRES_PASSWORD env var}"
 
 POSTGRES_HOST="${POSTGRES_HOST:-postgres}"
