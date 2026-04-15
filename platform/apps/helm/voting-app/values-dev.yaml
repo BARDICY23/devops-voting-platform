@@ -30,3 +30,10 @@ seed:
   enabled: true
   image:
     tag: "latest"
+
+# Override stale Redis image tag (7.2.5-debian-12-r4 removed from DockerHub)
+redis:
+  image:
+    tag: "7.4.3-debian-12-r0"
+  replica:
+    replicaCount: 1
