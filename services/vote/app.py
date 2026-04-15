@@ -41,7 +41,7 @@ def healthz():
 
 @app.route("/", methods=["GET", "POST"])
 def index():
-    #  Stable unique id per browser via cookie
+    # Stable unique id per browser via cookie
     voter_id = request.cookies.get("voter_id")
     if not voter_id:
         voter_id = str(uuid.uuid4())
