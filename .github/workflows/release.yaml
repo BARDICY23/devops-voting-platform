@@ -63,7 +63,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Scan pushed vote image
-        uses: aquasecurity/trivy-action@v0.28.0
+        uses: aquasecurity/trivy-action@v0.20.0
         with:
           image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/voting-vote:${{ github.sha }}
           severity: HIGH,CRITICAL
@@ -106,7 +106,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Scan pushed result image
-        uses: aquasecurity/trivy-action@v0.28.0
+        uses: aquasecurity/trivy-action@v0.20.0
         with:
           image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/voting-result:${{ github.sha }}
           severity: HIGH,CRITICAL
@@ -149,7 +149,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Scan pushed worker image
-        uses: aquasecurity/trivy-action@v0.28.0
+        uses: aquasecurity/trivy-action@v0.20.0
         with:
           image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/voting-worker:${{ github.sha }}
           severity: HIGH,CRITICAL
@@ -192,7 +192,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Scan pushed seed-data image
-        uses: aquasecurity/trivy-action@v0.28.0
+        uses: aquasecurity/trivy-action@v0.20.0
         with:
           image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/voting-seed-data:${{ github.sha }}
           severity: HIGH,CRITICAL
