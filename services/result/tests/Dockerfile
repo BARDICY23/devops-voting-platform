@@ -15,7 +15,9 @@ ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
 WORKDIR /app
 
 # Initialize a package and install Puppeteer explicitly
-RUN npm init -y && npm install puppeteer@latest
+RUN npm init -y && npm install puppeteer@latest && \
+    npm cache clean --force && \
+    rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx /opt/yarn*
 
 COPY . /app
 
