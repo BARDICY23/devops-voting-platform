@@ -1,13 +1,12 @@
-FROM python:3.11-slim
+FROM python:3.11-alpine
 
 WORKDIR /app
 
-RUN apt-get update && \
-    apt-get install -y apache2-utils postgresql-client && \
-    rm -rf /var/lib/apt/lists/*
+RUN apk update && \
+    apk add --no-cache apache2-utils postgresql-client
 
 # ✅ CREATE USER
-RUN useradd -m -u 10001 appuser
+RUN adduser -D -u 10001 appuser
 
 COPY . .
 

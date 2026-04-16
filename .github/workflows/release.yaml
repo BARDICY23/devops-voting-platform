@@ -68,7 +68,7 @@ jobs:
           image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/voting-vote:${{ github.sha }}
           severity: HIGH,CRITICAL
           ignore-unfixed: true
-          exit-code: '0'
+          exit-code: '1'
           format: sarif
           output: trivy-vote.sarif
 
@@ -111,7 +111,7 @@ jobs:
           image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/voting-result:${{ github.sha }}
           severity: HIGH,CRITICAL
           ignore-unfixed: true
-          exit-code: '0'
+          exit-code: '1'
           format: sarif
           output: trivy-result.sarif
 
@@ -154,7 +154,7 @@ jobs:
           image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/voting-worker:${{ github.sha }}
           severity: HIGH,CRITICAL
           ignore-unfixed: true
-          exit-code: '0'
+          exit-code: '1'
           format: sarif
           output: trivy-worker.sarif
 
@@ -197,7 +197,7 @@ jobs:
           image-ref: ${{ secrets.DOCKERHUB_USERNAME }}/voting-seed-data:${{ github.sha }}
           severity: HIGH,CRITICAL
           ignore-unfixed: true
-          exit-code: '0'
+          exit-code: '1'
           format: sarif
           output: trivy-seed.sarif
 

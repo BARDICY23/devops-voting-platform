@@ -1,11 +1,10 @@
-FROM node:8.9-slim
+FROM node:20-alpine
 
-RUN apt-get update -qq && apt-get install -qy \ 
+RUN apk update && apk add --no-cache \
     ca-certificates \
     bzip2 \
     curl \
-    libfontconfig \
-    --no-install-recommends
+    fontconfig
 RUN yarn global add phantomjs-prebuilt
 ADD . /app
 WORKDIR /app
