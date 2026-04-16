@@ -16,5 +16,17 @@
     "pg": "^8.13.1",
     "socket.io": "^4.8.1",
     "stoppable": "^1.1.0"
+  },
+  "overrides": {
+    "path-to-regexp": "^0.1.12",
+    "send": "^0.19.0",
+    "body-parser": "^1.20.3",
+    "serve-static": "^1.16.2",
+    "cookie": "^0.7.2",
+    "qs": "^6.13.0",
+    "cross-spawn": "^7.0.3",
+    "brace-expansion": "^2.0.1",
+    "minimatch": "^5.1.6",
+    "glob": "^8.1.0"
   }
 }
