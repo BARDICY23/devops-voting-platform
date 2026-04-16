@@ -2,20 +2,14 @@ FROM python:3.11-alpine
 
 WORKDIR /app
 
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    TMPDIR=/tmp
-
-
 COPY requirements.txt /app/requirements.txt
-RUN pip install --no-cache-dir -r /app/requirements.txt
+RUN pip install --no-cache-dir --upgrade pip wheel setuptools jaraco.context && \
+    pip install --no-cache-dir -r requirements.txt
 
-COPY . /app
+COPY . .
 
-# Create non-root user (fits runAsNonRoot policies)
-RUN groupadd -g 10001 appgroup \
- && useradd  -u 10001 -g 10001 -m -s /usr/sbin/nologin appuser \
- && chown -R 10001:10001 /app
+RUN adduser -D -u 10001 appuser && \
+    chown -R appuser:appuser /app
 
 USER 10001
 

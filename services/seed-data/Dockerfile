@@ -8,6 +8,8 @@ RUN apk update && \
 # ✅ CREATE USER
 RUN adduser -D -u 10001 appuser
 
+RUN pip install --no-cache-dir --upgrade pip wheel setuptools jaraco.context
+
 COPY . .
 
 RUN python3 make-data.py && \
