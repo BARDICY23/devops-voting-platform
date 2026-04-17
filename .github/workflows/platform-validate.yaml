@@ -45,3 +45,30 @@ jobs:
           helm template voting-app platform/apps/helm/voting-app \
             -f platform/apps/helm/voting-app/values.yaml \
             -f platform/apps/helm/voting-app/values-local.yaml > rendered.yaml
+
+      - name: Install kubeconform
+        run: |
+          curl -sSLo kubeconform.tar.gz \
+            https://github.com/yannh/kubeconform/releases/latest/download/kubeconform-linux-amd64.tar.gz
+          tar xf kubeconform.tar.gz
+          sudo mv kubeconform /usr/local/bin/
+
+      - name: Validate manifests against K8s schema
+        run: |
+          cat rendered.yaml | kubeconform \
+            -strict \
+            -ignore-missing-schemas \
+            -kubernetes-version 1.31.0
+
+      - name: Install kube-score
+        run: |
+          curl -sSLo kube-score \
+            https://github.com/zegl/kube-score/releases/latest/download/kube-score_linux_amd64
+          chmod +x kube-score && sudo mv kube-score /usr/local/bin/
+
+      - name: Score manifests for best practices
+        run: |
+          cat rendered.yaml | kube-score score \
+            --ignore-test pod-networkpolicy \
+            --ignore-test container-image-tag \
+            - || true

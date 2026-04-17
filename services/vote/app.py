@@ -32,11 +32,11 @@ def livez():
 
 @app.route("/healthz")
 def healthz():
-    try:
-        r.ping()
-        return "ok", 200
-    except Exception as e:
-        return f"redis not ready: {e}", 503
+    # Readiness should reflect app health, not dependency health.
+    # If Redis is down, the vote POST will return 503 naturally.
+    # Tying readiness to r.ping() causes all vote pods to simultaneously
+    # lose traffic during a Redis restart, creating a cascade outage.
+    return "ok", 200
 
 
 @app.route("/", methods=["GET", "POST"])

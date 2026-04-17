@@ -35,6 +35,8 @@ module "vpc" {
   }
 
   enable_nat_gateway = true
+  # Cost optimization: single NAT for dev (~$32/month saved).
+  # For production, set to false to deploy one NAT per AZ for high availability.
   single_nat_gateway = true
 
   enable_dns_hostnames = true
@@ -209,13 +211,27 @@ module "iam_assumable_role_alb_controller" {
 }
 
 # External Secrets Operator - read-only access to Secrets Manager
+# Scoped to only this project's secret path prefix (least-privilege).
+data "aws_caller_identity" "current" {}
+
 data "aws_iam_policy_document" "external_secrets" {
   statement {
+    sid    = "ESOGetSecrets"
     effect = "Allow"
     actions = [
       "secretsmanager:GetSecretValue",
       "secretsmanager:DescribeSecret",
-      "secretsmanager:ListSecrets"
+    ]
+    resources = [
+      "arn:aws:secretsmanager:${var.region}:${data.aws_caller_identity.current.account_id}:secret:${var.name}/*"
+    ]
+  }
+
+  statement {
+    sid    = "ESOListSecrets"
+    effect = "Allow"
+    actions = [
+      "secretsmanager:ListSecrets",
     ]
     resources = ["*"]
   }
